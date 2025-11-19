@@ -12,7 +12,6 @@ RUN npm ci --only=production
 
 # Copy server files and books folder (for initial DB seeding)
 COPY server/ ./server/
-COPY books/ ./books/
 
 # Create directory for database
 RUN mkdir -p /app/server
