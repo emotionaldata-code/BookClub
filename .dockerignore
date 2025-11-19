@@ -1,0 +1,11 @@
+node_modules
+dist
+.git
+.gitignore
+*.md
+.env
+.DS_Store
+npm-debug.log*
+server/bookclub.db
+server/bookclub.db-shm
+server/bookclub.db-wal

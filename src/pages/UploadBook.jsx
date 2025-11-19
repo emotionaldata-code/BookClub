@@ -1,0 +1,229 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import GenreTagInput from '../components/GenreTagInput'
+import './UploadBook.css'
+
+function UploadBook() {
+  const navigate = useNavigate()
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    genres: []
+  })
+  const [coverFile, setCoverFile] = useState(null)
+  const [coverPreview, setCoverPreview] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [success, setSuccess] = useState(false)
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleGenresChange = (newGenres) => {
+    setFormData(prev => ({ ...prev, genres: newGenres }))
+  }
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0]
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        setError('Please select an image file')
+        return
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Image must be less than 5MB')
+        return
+      }
+      
+      setCoverFile(file)
+      
+      // Create preview
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setCoverPreview(reader.result)
+      }
+      reader.readAsDataURL(file)
+      setError(null)
+    }
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError(null)
+    setSuccess(false)
+
+    if (!formData.title.trim()) {
+      setError('Title is required')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      const formDataToSend = new FormData()
+      formDataToSend.append('title', formData.title.trim())
+      formDataToSend.append('description', formData.description.trim())
+      formDataToSend.append('genres', JSON.stringify(formData.genres))
+      
+      if (coverFile) {
+        formDataToSend.append('cover', coverFile)
+      }
+
+      const response = await fetch('/api/books', {
+        method: 'POST',
+        body: formDataToSend
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create book')
+      }
+
+      const newBook = await response.json()
+      setSuccess(true)
+      
+      // Reset form
+      setFormData({ title: '', description: '', genres: [] })
+      setCoverFile(null)
+      setCoverPreview(null)
+      
+      // Redirect to book detail after 2 seconds
+      setTimeout(() => {
+        navigate(`/books/${newBook.id}`)
+      }, 2000)
+    } catch (err) {
+      console.error('Error creating book:', err)
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="container">
+      <div className="upload-book">
+        <h2 className="page-title">Add New Book</h2>
+        
+        {success && (
+          <div className="alert alert-success">
+            ✓ Book added successfully! Redirecting...
+          </div>
+        )}
+        
+        {error && (
+          <div className="alert alert-error">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="upload-form">
+          <div className="form-group">
+            <label htmlFor="cover" className="form-label">
+              Book Cover
+            </label>
+            <div className="cover-upload">
+              {coverPreview ? (
+                <div className="cover-preview">
+                  <img src={coverPreview} alt="Cover preview" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCoverFile(null)
+                      setCoverPreview(null)
+                    }}
+                    className="cover-remove"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <label htmlFor="cover" className="cover-upload-label">
+                  <div className="cover-upload-placeholder">
+                    <span className="cover-upload-icon">📷</span>
+                    <span className="cover-upload-text">
+                      Click to upload cover image
+                    </span>
+                    <span className="cover-upload-hint">
+                      PNG, JPG, WEBP (max 5MB)
+                    </span>
+                  </div>
+                </label>
+              )}
+              <input
+                type="file"
+                id="cover"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="cover-input"
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="title" className="form-label">
+              Title <span className="required">*</span>
+            </label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              value={formData.title}
+              onChange={handleInputChange}
+              placeholder="Enter book title..."
+              className="form-input"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="description" className="form-label">
+              Description
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              placeholder="Enter book description..."
+              className="form-textarea"
+              rows="5"
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">
+              Genres
+            </label>
+            <GenreTagInput
+              genres={formData.genres}
+              onChange={handleGenresChange}
+            />
+          </div>
+
+          <div className="form-actions">
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="btn btn-secondary"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={loading}
+            >
+              {loading ? 'Adding Book...' : 'Add Book'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+export default UploadBook
+

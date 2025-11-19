@@ -1,0 +1,240 @@
+.graph-view {
+  position: relative;
+  min-height: 600px;
+}
+
+.graph-view > .search-bar {
+  margin-bottom: 1rem;
+}
+
+.graph-controls {
+  position: absolute;
+  top: 4.5rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--surface);
+  padding: 0.5rem;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
+  z-index: 10;
+}
+
+.zoom-button {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-color);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.zoom-button:hover {
+  background: var(--surface-light);
+  border-color: var(--text-secondary);
+}
+
+.zoom-level {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  min-width: 50px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.graph-canvas {
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  height: 700px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.graph-canvas svg {
+  transition: transform 0.2s ease;
+}
+
+.genre-circle {
+  transition: all 0.2s ease;
+}
+
+.genre-circle-group:hover .genre-circle {
+  fill: #f8f9fa;
+  stroke: #3498db;
+  stroke-width: 3;
+}
+
+.genre-circle-group:hover .genre-label {
+  fill: #2c3e50;
+  font-weight: 700;
+}
+
+.no-genres {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--text-secondary);
+}
+
+/* Genre detail view */
+.genre-detail {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 2rem;
+  font-family: inherit;
+}
+
+.back-button:hover {
+  background: var(--surface-light);
+  transform: translateX(-4px);
+}
+
+.genre-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  text-transform: capitalize;
+}
+
+.genre-count {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.genre-detail .search-bar {
+  margin-bottom: 2rem;
+}
+
+.genre-books {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.genre-book-item {
+  display: flex;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow);
+}
+
+.genre-book-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+  border-color: var(--accent-color);
+}
+
+.genre-book-cover {
+  width: 80px;
+  height: 107px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--surface-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.genre-book-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.genre-book-placeholder {
+  font-size: 2rem;
+  opacity: 0.3;
+}
+
+.genre-book-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.genre-book-info h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.genre-book-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.genre-book-tags .genre-tag {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.6rem;
+}
+
+@media (max-width: 768px) {
+  .graph-canvas {
+    height: 500px;
+  }
+  
+  .genre-books {
+    grid-template-columns: 1fr;
+  }
+  
+  .genre-title {
+    font-size: 2rem;
+  }
+  
+  .graph-controls {
+    top: 0.5rem;
+    right: 0.5rem;
+  }
+}
+
