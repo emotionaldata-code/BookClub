@@ -85,13 +85,6 @@ function GraphView() {
 
   const genres = Object.keys(genreData)
 
-  // Compute min/max counts to scale circle sizes based on how many books each genre has
-  const counts = genres.map((g) => genreData[g].length)
-  const minCount = counts.length > 0 ? Math.min(...counts) : 0
-  const maxCount = counts.length > 0 ? Math.max(...counts) : 0
-  const minRadius = 28
-  const maxRadius = 70
-  
   // Calculate circle positions in a circular layout
   const centerX = 500
   const centerY = 400
@@ -312,12 +305,10 @@ function GraphView() {
               {genres.map(genre => {
                 const pos = genrePositions[genre]
 
-                // Scale radius smoothly between minRadius and maxRadius based on book count
-                let circleRadius = (minRadius + maxRadius) / 2
-                if (maxCount > 0) {
-                  const ratio = (pos.count - minCount) / (maxCount - minCount || 1)
-                  circleRadius = minRadius + ratio * (maxRadius - minRadius)
-                }
+                // Make circle size strongly reflect how many books the genre has
+                const baseRadius = 70
+                const radiusPerBook = 30
+                const circleRadius = Math.min(baseRadius + pos.count * radiusPerBook, 160)
 
                 return (
                   <g

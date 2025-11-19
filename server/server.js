@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
 import dotenv from 'dotenv';
-import { getAllBooks, searchBooks, getBookById, initializeDatabase, isDatabaseEmpty, createBook, getBooksListOptimized, getAllGenres } from './db.js';
+import { getAllBooks, searchBooks, getBookById, initializeDatabase, isDatabaseEmpty, createBook, getBooksListOptimized, getAllGenres, deleteBook } from './db.js';
 
 dotenv.config();
 
@@ -81,6 +81,23 @@ app.get('/api/books/:id', async (req, res) => {
   } catch (error) {
     console.error('Error fetching book:', error);
     res.status(500).json({ error: 'Failed to fetch book' });
+  }
+});
+
+// Delete a book by ID
+app.delete('/api/books/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await deleteBook(id);
+
+    if (!deleted) {
+      return res.status(404).json({ error: 'Book not found' });
+    }
+
+    res.status(204).send();
+  } catch (error) {
+    console.error('Error deleting book:', error);
+    res.status(500).json({ error: 'Failed to delete book' });
   }
 });
 

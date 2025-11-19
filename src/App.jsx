@@ -3,6 +3,7 @@ import Home from './pages/Home'
 import GraphView from './pages/GraphView'
 import BookDetail from './pages/BookDetail'
 import UploadBook from './pages/UploadBook'
+import SecretAdmin from './pages/SecretAdmin'
 import './App.css'
 
 function Navigation() {
@@ -69,6 +70,7 @@ function App() {
             <Route path="/graph" element={<GraphView />} />
             <Route path="/upload" element={<UploadBook />} />
             <Route path="/books/:bookId" element={<BookDetail />} />
+            <Route path="/secret_admin" element={<SecretAdmin />} />
           </Routes>
         </main>
       </div>

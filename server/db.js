@@ -411,5 +411,17 @@ export async function createBook(bookData) {
   }
 }
 
+export async function deleteBook(id) {
+  const { rowCount } = await pool.query(
+    `
+      DELETE FROM books
+      WHERE id = $1
+    `,
+    [id]
+  );
+
+  return rowCount > 0;
+}
+
 export default pool;
 
