@@ -12,11 +12,6 @@ dist
 dist-ssr
 *.local
 
-# Database
-server/bookclub.db
-server/bookclub.db-shm
-server/bookclub.db-wal
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
