@@ -12,7 +12,8 @@ function GraphView() {
   const [zoom, setZoom] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const panRef = useRef({ x: 0, y: 0 })
+  const dragStartRef = useRef({ x: 0, y: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -84,6 +85,13 @@ function GraphView() {
 
   const genres = Object.keys(genreData)
 
+  // Compute min/max counts to scale circle sizes based on how many books each genre has
+  const counts = genres.map((g) => genreData[g].length)
+  const minCount = counts.length > 0 ? Math.min(...counts) : 0
+  const maxCount = counts.length > 0 ? Math.max(...counts) : 0
+  const minRadius = 28
+  const maxRadius = 70
+  
   // Calculate circle positions in a circular layout
   const centerX = 500
   const centerY = 400
@@ -119,59 +127,37 @@ function GraphView() {
     navigate(`/books/${bookId}`)
   }
 
-  const handleMouseDown = (e) => {
-    if (e.target.tagName === 'svg' || e.target.classList.contains('graph-canvas')) {
-      setIsDragging(true)
-      setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
-    }
-  }
+  const handlePointerDown = (e) => {
+    // Only respond to primary button / single touch
+    if (e.pointerType === 'mouse' && e.button !== 0) return
 
-  const handleMouseMove = (e) => {
-    if (isDragging) {
-      setPan({
-        x: e.clientX - dragStart.x,
-        y: e.clientY - dragStart.y
-      })
-    }
-  }
+    e.currentTarget.setPointerCapture?.(e.pointerId)
 
-  const handleMouseUp = () => {
-    setIsDragging(false)
-  }
-
-  const handleTouchStart = (e) => {
-    if (e.touches.length !== 1) return
-
-    const touch = e.touches[0]
     setIsDragging(true)
-    setDragStart({ x: touch.clientX - pan.x, y: touch.clientY - pan.y })
+    const currentPan = panRef.current
+    dragStartRef.current = {
+      x: e.clientX - currentPan.x,
+      y: e.clientY - currentPan.y
+    }
   }
 
-  const handleTouchMove = (e) => {
-    if (!isDragging || e.touches.length !== 1) return
+  const handlePointerMove = (e) => {
+    if (!isDragging) return
 
-    const touch = e.touches[0]
-    e.preventDefault()
-    setPan({
-      x: touch.clientX - dragStart.x,
-      y: touch.clientY - dragStart.y
-    })
+    const start = dragStartRef.current
+    const newPan = {
+      x: e.clientX - start.x,
+      y: e.clientY - start.y
+    }
+
+    panRef.current = newPan
+    setPan(newPan)
   }
 
-  const handleTouchEnd = () => {
+  const handlePointerUp = (e) => {
+    e.currentTarget.releasePointerCapture?.(e.pointerId)
     setIsDragging(false)
   }
-
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove)
-      document.addEventListener('mouseup', handleMouseUp)
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove)
-        document.removeEventListener('mouseup', handleMouseUp)
-      }
-    }
-  }, [isDragging, dragStart])
 
   if (loading) {
     return (
@@ -258,11 +244,10 @@ function GraphView() {
 
         <div
           className="graph-canvas"
-          onMouseDown={handleMouseDown}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onTouchCancel={handleTouchEnd}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
           style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
         >
           <svg
@@ -326,7 +311,13 @@ function GraphView() {
             <g className="genres">
               {genres.map(genre => {
                 const pos = genrePositions[genre]
-                const circleRadius = 40 + Math.min(pos.count * 8, 40)
+
+                // Scale radius smoothly between minRadius and maxRadius based on book count
+                let circleRadius = (minRadius + maxRadius) / 2
+                if (maxCount > 0) {
+                  const ratio = (pos.count - minCount) / (maxCount - minCount || 1)
+                  circleRadius = minRadius + ratio * (maxRadius - minRadius)
+                }
 
                 return (
                   <g

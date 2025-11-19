@@ -95,7 +95,14 @@ function GenreTagInput({ genres, onChange }) {
   return (
     <div className="genre-tag-input">
       <div className="genre-tags-container-wrapper">
-        <div className="genre-tags-container">
+        <div
+          className="genre-tags-container"
+          onClick={() => {
+            if (inputRef.current) {
+              inputRef.current.focus()
+            }
+          }}
+        >
           {genres.map((genre, index) => (
             <span key={index} className="genre-tag-item">
               {genre}

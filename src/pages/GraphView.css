@@ -4,7 +4,7 @@
 }
 
 .graph-view > .search-bar {
-  margin-bottom: 1rem;
+  display: none;
 }
 
 .graph-controls {
@@ -60,6 +60,7 @@
   align-items: center;
   justify-content: center;
   user-select: none;
+  touch-action: none;
 }
 
 .graph-canvas svg {
@@ -140,7 +141,7 @@
 }
 
 .genre-detail .search-bar {
-  margin-bottom: 2rem;
+  display: none;
 }
 
 .genre-books {
