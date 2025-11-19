@@ -8,9 +8,6 @@
 }
 
 .graph-controls {
-  position: absolute;
-  top: 4.5rem;
-  right: 1rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -233,8 +230,8 @@
   }
   
   .graph-controls {
-    top: 0.5rem;
-    right: 0.5rem;
+    position: static;
+    margin: 0.75rem 0;
   }
 }
 

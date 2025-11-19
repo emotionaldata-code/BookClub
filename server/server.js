@@ -3,7 +3,10 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
+import dotenv from 'dotenv';
 import { getAllBooks, searchBooks, getBookById, initializeDatabase, isDatabaseEmpty, createBook, getBooksListOptimized, getAllGenres } from './db.js';
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,32 +34,20 @@ const upload = multer({
   }
 });
 
-// Initialize database on startup (only if empty)
-console.log('Checking database status...');
-const initResult = initializeDatabase(false);
-if (initResult.skipped) {
-    const booksCount = getAllBooks().length;
-    console.log(`Database ready with ${booksCount} books.`);
-} else if (initResult.success) {
-    console.log('✓ Database initialized for the first time');
-} else {
-    console.error('✗ Database initialization failed:', initResult.message);
-}
-
 // Get all books or search books
-app.get('/api/books', (req, res) => {
+app.get('/api/books', async (req, res) => {
   try {
     const { search, optimized } = req.query;
     
     // Use optimized version for list views (excludes description)
     if (optimized === 'true') {
-      const books = getBooksListOptimized();
+      const books = await getBooksListOptimized();
       res.json(books);
     } else if (search && search.trim()) {
-      const books = searchBooks(search.trim());
+      const books = await searchBooks(search.trim());
       res.json(books);
     } else {
-      const books = getAllBooks();
+      const books = await getAllBooks();
       res.json(books);
     }
   } catch (error) {
@@ -66,9 +57,9 @@ app.get('/api/books', (req, res) => {
 });
 
 // Get all genres
-app.get('/api/genres', (req, res) => {
+app.get('/api/genres', async (req, res) => {
   try {
-    const genres = getAllGenres();
+    const genres = await getAllGenres();
     res.json(genres);
   } catch (error) {
     console.error('Error fetching genres:', error);
@@ -77,10 +68,10 @@ app.get('/api/genres', (req, res) => {
 });
 
 // Get a single book by ID
-app.get('/api/books/:id', (req, res) => {
+app.get('/api/books/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const book = getBookById(id);
+    const book = await getBookById(id);
     
     if (!book) {
       return res.status(404).json({ error: 'Book not found' });
@@ -94,7 +85,7 @@ app.get('/api/books/:id', (req, res) => {
 });
 
 // Create a new book
-app.post('/api/books', upload.single('cover'), (req, res) => {
+app.post('/api/books', upload.single('cover'), async (req, res) => {
   try {
     const { title, description, genres } = req.body;
     
@@ -115,7 +106,7 @@ app.post('/api/books', upload.single('cover'), (req, res) => {
     // Get cover image buffer if uploaded
     const coverBuffer = req.file ? req.file.buffer : null;
     
-    const newBook = createBook({
+    const newBook = await createBook({
       title: title.trim(),
       description: description?.trim() || '',
       cover: coverBuffer,
@@ -133,28 +124,33 @@ app.post('/api/books', upload.single('cover'), (req, res) => {
 });
 
 // Reinitialize database (useful for development - force reload from books folder)
-app.post('/api/reinitialize', (req, res) => {
-    try {
-        const result = initializeDatabase(true); // Force reinitialize
-        res.json({
-            message: 'Database reinitialized successfully',
-            ...result
-        });
-    } catch (error) {
-        console.error('Error reinitializing database:', error);
-        res.status(500).json({ error: 'Failed to reinitialize database' });
-    }
+app.post('/api/reinitialize', async (req, res) => {
+  try {
+    const result = await initializeDatabase(true); // Force reinitialize
+    res.json({
+      message: 'Database reinitialized successfully',
+      ...result,
+    });
+  } catch (error) {
+    console.error('Error reinitializing database:', error);
+    res.status(500).json({ error: 'Failed to reinitialize database' });
+  }
 });
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
-    const booksCount = getAllBooks().length;
+app.get('/api/health', async (req, res) => {
+  try {
+    const books = await getAllBooks();
     res.json({
-        status: 'ok',
-        database: 'connected',
-        books: booksCount,
-        isEmpty: isDatabaseEmpty()
+      status: 'ok',
+      database: 'connected',
+      books: books.length,
+      isEmpty: await isDatabaseEmpty(),
     });
+  } catch (error) {
+    console.error('Error in health check:', error);
+    res.status(500).json({ error: 'Health check failed' });
+  }
 });
 
 // In production, serve the built frontend
@@ -172,12 +168,32 @@ if (isProduction) {
     console.log(`Serving frontend from ${distPath}`);
 }
 
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-    if (isProduction) {
-        console.log('Running in PRODUCTION mode (serving frontend + API)');
+async function startServer() {
+  try {
+    console.log('Checking database status...');
+    const initResult = await initializeDatabase(false);
+    if (initResult.skipped) {
+      const books = await getAllBooks();
+      console.log(`Database ready with ${books.length} books.`);
+    } else if (initResult.success) {
+      console.log('✓ Database initialized for the first time');
     } else {
-        console.log('Running in DEVELOPMENT mode (API only)');
+      console.error('✗ Database initialization failed:', initResult.message);
     }
-});
+
+    app.listen(PORT, () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+      if (isProduction) {
+        console.log('Running in PRODUCTION mode (serving frontend + API)');
+      } else {
+        console.log('Running in DEVELOPMENT mode (API only)');
+      }
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
 

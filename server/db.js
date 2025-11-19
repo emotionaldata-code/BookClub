@@ -1,279 +1,415 @@
-import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import matter from 'gray-matter';
+import dotenv from 'dotenv';
+import pkg from 'pg';
+
+dotenv.config();
+const { Pool } = pkg;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const dbPath = path.join(__dirname, 'bookclub.db');
-const db = new Database(dbPath);
+const connectionString = process.env.POSTGRES_URL;
 
-// Create tables
-db.exec(`
-  CREATE TABLE IF NOT EXISTS books (
-    id TEXT PRIMARY KEY,
-    title TEXT NOT NULL,
-    description TEXT,
-    cover BLOB
-  );
+if (!connectionString) {
+  console.warn('POSTGRES_URL is not set. Database operations will fail until it is configured.');
+}
 
-  CREATE TABLE IF NOT EXISTS genres (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE
-  );
+export const pool = new Pool({
+  connectionString,
+});
 
-  CREATE TABLE IF NOT EXISTS book_genres (
-    book_id TEXT NOT NULL,
-    genre_id INTEGER NOT NULL,
-    FOREIGN KEY (book_id) REFERENCES books(id),
-    FOREIGN KEY (genre_id) REFERENCES genres(id),
-    PRIMARY KEY (book_id, genre_id)
-  );
+// Helper to create tables/schema
+export async function createSchema(clientOrPool = pool) {
+  const executor = 'query' in clientOrPool ? clientOrPool : pool;
 
-  CREATE INDEX IF NOT EXISTS idx_book_genres_book_id ON book_genres(book_id);
-  CREATE INDEX IF NOT EXISTS idx_book_genres_genre_id ON book_genres(genre_id);
-  CREATE INDEX IF NOT EXISTS idx_books_title ON books(title);
-`);
+  await executor.query(`
+    CREATE TABLE IF NOT EXISTS books (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      description TEXT,
+      cover BYTEA
+    );
+
+    CREATE TABLE IF NOT EXISTS genres (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL UNIQUE
+    );
+
+    CREATE TABLE IF NOT EXISTS book_genres (
+      book_id TEXT NOT NULL,
+      genre_id INTEGER NOT NULL,
+      FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
+      FOREIGN KEY (genre_id) REFERENCES genres(id) ON DELETE CASCADE,
+      PRIMARY KEY (book_id, genre_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_book_genres_book_id ON book_genres(book_id);
+    CREATE INDEX IF NOT EXISTS idx_book_genres_genre_id ON book_genres(genre_id);
+    CREATE INDEX IF NOT EXISTS idx_books_title ON books(title);
+  `);
+}
 
 // Check if database is empty
-export function isDatabaseEmpty() {
-  const result = db.prepare('SELECT COUNT(*) as count FROM books').get();
-  return result.count === 0;
+export async function isDatabaseEmpty() {
+  const { rows } = await pool.query('SELECT COUNT(*) AS count FROM books');
+  return Number(rows[0].count) === 0;
 }
 
 // Function to initialize database with books from books folder
-export function initializeDatabase(force = false) {
+export async function initializeDatabase(force = false) {
   const booksDir = path.join(__dirname, '..', 'books');
-  
+
   if (!fs.existsSync(booksDir)) {
     console.log('Books directory not found');
     return { success: false, message: 'Books directory not found' };
   }
 
-  // Only clear existing data if force is true
-  if (force) {
-    console.log('Force initialization: clearing existing data...');
-    db.exec('DELETE FROM book_genres');
-    db.exec('DELETE FROM genres');
-    db.exec('DELETE FROM books');
-  } else if (!isDatabaseEmpty()) {
-    console.log('Database already initialized, skipping...');
-    return { success: true, message: 'Database already initialized', skipped: true };
-  }
+  const client = await pool.connect();
 
-  const bookFolders = fs.readdirSync(booksDir);
+  try {
+    await client.query('BEGIN');
 
-    const insertBook = db.prepare('INSERT OR REPLACE INTO books (id, title, description, cover) VALUES (?, ?, ?, ?)');
-    const insertGenre = db.prepare('INSERT OR IGNORE INTO genres (name) VALUES (?)');
-    const getGenreId = db.prepare('SELECT id FROM genres WHERE name = ?');
-    const insertBookGenre = db.prepare('INSERT OR IGNORE INTO book_genres (book_id, genre_id) VALUES (?, ?)');
+    // Ensure schema exists
+    await createSchema(client);
 
-    const transaction = db.transaction(() => {
-        for (const folder of bookFolders) {
-            const bookPath = path.join(booksDir, folder);
-            const stat = fs.statSync(bookPath);
+    // Only clear existing data if force is true
+    if (force) {
+      console.log('Force initialization: clearing existing data...');
+      await client.query('TRUNCATE TABLE book_genres, genres, books RESTART IDENTITY');
+    } else {
+      const { rows } = await client.query('SELECT COUNT(*) AS count FROM books');
+      if (Number(rows[0].count) > 0) {
+        console.log('Database already initialized, skipping...');
+        await client.query('COMMIT');
+        return { success: true, message: 'Database already initialized', skipped: true };
+      }
+    }
 
-            if (stat.isDirectory()) {
-                const descriptionPath = path.join(bookPath, 'description.md');
-                const coverPath = path.join(bookPath, 'cover.png');
+    const bookFolders = fs.readdirSync(booksDir);
 
-                if (fs.existsSync(descriptionPath)) {
-                    const descriptionContent = fs.readFileSync(descriptionPath, 'utf-8');
-                    const { data } = matter(descriptionContent);
+    for (const folder of bookFolders) {
+      const bookPath = path.join(booksDir, folder);
+      const stat = fs.statSync(bookPath);
 
-                    // Read cover image as blob
-                    let coverData = null;
-                    if (fs.existsSync(coverPath)) {
-                        coverData = fs.readFileSync(coverPath);
-                    }
+      if (stat.isDirectory()) {
+        const descriptionPath = path.join(bookPath, 'description.md');
+        const coverPath = path.join(bookPath, 'cover.png');
 
-                    // Insert book
-                    insertBook.run(folder, data.title || folder, data.description || '', coverData);
+        if (fs.existsSync(descriptionPath)) {
+          const descriptionContent = fs.readFileSync(descriptionPath, 'utf-8');
+          const { data } = matter(descriptionContent);
 
-                    // Insert genres and link them to the book
-                    if (data.genres && Array.isArray(data.genres)) {
-                        for (const genreName of data.genres) {
-                            insertGenre.run(genreName);
-                            const genre = getGenreId.get(genreName);
-                            if (genre) {
-                                insertBookGenre.run(folder, genre.id);
-                            }
-                        }
-                    }
-                }
+          // Read cover image as blob
+          let coverData = null;
+          if (fs.existsSync(coverPath)) {
+            coverData = fs.readFileSync(coverPath);
+          }
+
+          // Insert or update book
+          await client.query(
+            `
+            INSERT INTO books (id, title, description, cover)
+            VALUES ($1, $2, $3, $4)
+            ON CONFLICT (id) DO UPDATE SET
+              title = EXCLUDED.title,
+              description = EXCLUDED.description,
+              cover = EXCLUDED.cover
+          `,
+            [folder, data.title || folder, data.description || '', coverData]
+          );
+
+          // Insert genres and link them to the book
+          if (data.genres && Array.isArray(data.genres)) {
+            for (const genreName of data.genres) {
+              if (!genreName || !genreName.trim()) continue;
+              const genreTrimmed = genreName.trim();
+
+              await client.query(
+                `
+                INSERT INTO genres (name)
+                VALUES ($1)
+                ON CONFLICT (name) DO NOTHING
+              `,
+                [genreTrimmed]
+              );
+
+              const { rows: genreRows } = await client.query(
+                'SELECT id FROM genres WHERE name = $1',
+                [genreTrimmed]
+              );
+
+              if (genreRows[0]) {
+                await client.query(
+                  `
+                  INSERT INTO book_genres (book_id, genre_id)
+                  VALUES ($1, $2)
+                  ON CONFLICT (book_id, genre_id) DO NOTHING
+                `,
+                  [folder, genreRows[0].id]
+                );
+              }
             }
+          }
         }
-    });
+      }
+    }
 
-  transaction();
-  
-  const bookCount = db.prepare('SELECT COUNT(*) as count FROM books').get();
-  console.log(`Database initialized successfully! Loaded ${bookCount.count} books.`);
-  
-  return { success: true, message: `Database initialized with ${bookCount.count} books` };
+    const { rows: bookCountRows } = await client.query(
+      'SELECT COUNT(*) AS count FROM books'
+    );
+    await client.query('COMMIT');
+
+    const count = Number(bookCountRows[0].count);
+    console.log(`Database initialized successfully! Loaded ${count} books.`);
+
+    return { success: true, message: `Database initialized with ${count} books` };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error initializing database:', error);
+    return { success: false, message: error.message };
+  } finally {
+    client.release();
+  }
 }
 
 // Get all books (full data including cover images)
-export function getAllBooks() {
-  const books = db.prepare(`
-    SELECT id, title, description, cover
-    FROM books
-    ORDER BY title
-  `).all();
+export async function getAllBooks() {
+  const { rows: books } = await pool.query(
+    `
+      SELECT id, title, description, cover
+      FROM books
+      ORDER BY title
+    `
+  );
 
-  return books.map(book => {
-    const genres = db.prepare(`
+  const result = [];
+
+  for (const book of books) {
+    const { rows: genreRows } = await pool.query(
+      `
       SELECT g.name
       FROM genres g
       INNER JOIN book_genres bg ON g.id = bg.genre_id
-      WHERE bg.book_id = ?
+      WHERE bg.book_id = $1
       ORDER BY g.name
-    `).all(book.id).map(g => g.name);
+    `,
+      [book.id]
+    );
 
-    return {
+    const genres = genreRows.map((g) => g.name);
+
+    result.push({
       id: book.id,
       title: book.title,
       description: book.description,
       cover: book.cover ? `data:image/png;base64,${book.cover.toString('base64')}` : null,
-      genres
-    };
-  });
+      genres,
+    });
+  }
+
+  return result;
 }
 
 // Get books list (optimized - without description for faster list queries)
-export function getBooksListOptimized() {
-  const books = db.prepare(`
-    SELECT id, title, cover
-    FROM books
-    ORDER BY title
-  `).all();
+export async function getBooksListOptimized() {
+  const { rows: books } = await pool.query(
+    `
+      SELECT id, title, cover
+      FROM books
+      ORDER BY title
+    `
+  );
 
-  return books.map(book => {
-    const genres = db.prepare(`
+  const result = [];
+
+  for (const book of books) {
+    const { rows: genreRows } = await pool.query(
+      `
       SELECT g.name
       FROM genres g
       INNER JOIN book_genres bg ON g.id = bg.genre_id
-      WHERE bg.book_id = ?
+      WHERE bg.book_id = $1
       ORDER BY g.name
-    `).all(book.id).map(g => g.name);
+    `,
+      [book.id]
+    );
 
-    return {
+    const genres = genreRows.map((g) => g.name);
+
+    result.push({
       id: book.id,
       title: book.title,
       cover: book.cover ? `data:image/png;base64,${book.cover.toString('base64')}` : null,
-      genres
-    };
-  });
+      genres,
+    });
+  }
+
+  return result;
 }
 
 // Get all unique genres
-export function getAllGenres() {
-  return db.prepare(`
-    SELECT DISTINCT name
-    FROM genres
-    ORDER BY name
-  `).all().map(g => g.name);
+export async function getAllGenres() {
+  const { rows } = await pool.query(
+    `
+      SELECT DISTINCT name
+      FROM genres
+      ORDER BY name
+    `
+  );
+
+  return rows.map((g) => g.name);
 }
 
 // Search books by title
-export function searchBooks(query) {
-    const books = db.prepare(`
-    SELECT id, title, description, cover
-    FROM books
-    WHERE title LIKE ?
-    ORDER BY title
-  `).all(`%${query}%`);
+export async function searchBooks(query) {
+  const { rows: books } = await pool.query(
+    `
+      SELECT id, title, description, cover
+      FROM books
+      WHERE title ILIKE $1
+      ORDER BY title
+    `,
+    [`%${query}%`]
+  );
 
-    return books.map(book => {
-        const genres = db.prepare(`
+  const result = [];
+
+  for (const book of books) {
+    const { rows: genreRows } = await pool.query(
+      `
       SELECT g.name
       FROM genres g
       INNER JOIN book_genres bg ON g.id = bg.genre_id
-      WHERE bg.book_id = ?
+      WHERE bg.book_id = $1
       ORDER BY g.name
-    `).all(book.id).map(g => g.name);
+    `,
+      [book.id]
+    );
 
-        return {
-            id: book.id,
-            title: book.title,
-            description: book.description,
-            cover: book.cover ? `data:image/png;base64,${book.cover.toString('base64')}` : null,
-            genres
-        };
+    const genres = genreRows.map((g) => g.name);
+
+    result.push({
+      id: book.id,
+      title: book.title,
+      description: book.description,
+      cover: book.cover ? `data:image/png;base64,${book.cover.toString('base64')}` : null,
+      genres,
     });
+  }
+
+  return result;
 }
 
 // Get a single book by ID
-export function getBookById(id) {
-  const book = db.prepare(`
-    SELECT id, title, description, cover
-    FROM books
-    WHERE id = ?
-  `).get(id);
+export async function getBookById(id) {
+  const { rows } = await pool.query(
+    `
+      SELECT id, title, description, cover
+      FROM books
+      WHERE id = $1
+    `,
+    [id]
+  );
+
+  const book = rows[0];
 
   if (!book) {
     return null;
   }
 
-  const genres = db.prepare(`
-    SELECT g.name
-    FROM genres g
-    INNER JOIN book_genres bg ON g.id = bg.genre_id
-    WHERE bg.book_id = ?
-    ORDER BY g.name
-  `).all(book.id).map(g => g.name);
+  const { rows: genreRows } = await pool.query(
+    `
+      SELECT g.name
+      FROM genres g
+      INNER JOIN book_genres bg ON g.id = bg.genre_id
+      WHERE bg.book_id = $1
+      ORDER BY g.name
+    `,
+    [book.id]
+  );
+
+  const genres = genreRows.map((g) => g.name);
 
   return {
     id: book.id,
     title: book.title,
     description: book.description,
     cover: book.cover ? `data:image/png;base64,${book.cover.toString('base64')}` : null,
-    genres
+    genres,
   };
 }
 
 // Create a new book
-export function createBook(bookData) {
+export async function createBook(bookData) {
   const { title, description, cover, genres } = bookData;
-  
+
   // Generate a unique ID from title
   const id = title.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
-  
-  // Check if book already exists
-  const existing = db.prepare('SELECT id FROM books WHERE id = ?').get(id);
-  if (existing) {
-    throw new Error('A book with this title already exists');
-  }
-  
-  const insertBook = db.prepare('INSERT INTO books (id, title, description, cover) VALUES (?, ?, ?, ?)');
-  const insertGenre = db.prepare('INSERT OR IGNORE INTO genres (name) VALUES (?)');
-  const getGenreId = db.prepare('SELECT id FROM genres WHERE name = ?');
-  const insertBookGenre = db.prepare('INSERT INTO book_genres (book_id, genre_id) VALUES (?, ?)');
-  
-  const transaction = db.transaction(() => {
-    // Insert the book
-    insertBook.run(id, title, description || '', cover || null);
-    
-    // Insert genres and link them
+
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    await client.query(
+      `
+        INSERT INTO books (id, title, description, cover)
+        VALUES ($1, $2, $3, $4)
+      `,
+      [id, title, description || '', cover || null]
+    );
+
     if (genres && Array.isArray(genres) && genres.length > 0) {
       for (const genreName of genres) {
-        if (genreName && genreName.trim()) {
-          insertGenre.run(genreName.trim());
-          const genre = getGenreId.get(genreName.trim());
-          if (genre) {
-            insertBookGenre.run(id, genre.id);
-          }
+        if (!genreName || !genreName.trim()) continue;
+        const genreTrimmed = genreName.trim();
+
+        await client.query(
+          `
+            INSERT INTO genres (name)
+            VALUES ($1)
+            ON CONFLICT (name) DO NOTHING
+          `,
+          [genreTrimmed]
+        );
+
+        const { rows: genreRows } = await client.query(
+          'SELECT id FROM genres WHERE name = $1',
+          [genreTrimmed]
+        );
+
+        if (genreRows[0]) {
+          await client.query(
+            `
+              INSERT INTO book_genres (book_id, genre_id)
+              VALUES ($1, $2)
+              ON CONFLICT (book_id, genre_id) DO NOTHING
+            `,
+            [id, genreRows[0].id]
+          );
         }
       }
     }
-  });
-  
-  transaction();
-  
-  return getBookById(id);
+
+    await client.query('COMMIT');
+
+    return await getBookById(id);
+  } catch (error) {
+    await client.query('ROLLBACK');
+
+    // 23505: unique_violation
+    if (error.code === '23505') {
+      throw new Error('A book with this title already exists');
+    }
+
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
-export default db;
+export default pool;
 

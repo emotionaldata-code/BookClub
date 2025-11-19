@@ -26,11 +26,11 @@ function GraphView() {
       setLoading(true)
       setError(null)
       const response = await fetch('/api/books')
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch books')
       }
-      
+
       const data = await response.json()
       setBooks(data)
     } catch (err) {
@@ -40,23 +40,23 @@ function GraphView() {
       setLoading(false)
     }
   }
-  
+
   // Filter books based on search query
   const filteredBooks = useMemo(() => {
     if (!searchQuery.trim()) {
       return books
     }
-    
+
     const query = searchQuery.toLowerCase().trim()
-    return books.filter(book => 
+    return books.filter(book =>
       book.title.toLowerCase().includes(query)
     )
   }, [searchQuery, books])
-  
+
   // Extract all unique genres and create genre data
   const genreData = {}
   const genreConnections = {}
-  
+
   filteredBooks.forEach(book => {
     if (book.genres && book.genres.length > 0) {
       book.genres.forEach(genre => {
@@ -65,7 +65,7 @@ function GraphView() {
         }
         genreData[genre].push(book)
       })
-      
+
       // Create connections between genres for books with multiple genres
       // Store each book that creates a connection
       if (book.genres.length > 1) {
@@ -81,14 +81,14 @@ function GraphView() {
       }
     }
   })
-  
+
   const genres = Object.keys(genreData)
-  
+
   // Calculate circle positions in a circular layout
   const centerX = 500
   const centerY = 400
   const radius = 250
-  
+
   const genrePositions = {}
   genres.forEach((genre, index) => {
     const angle = (index / genres.length) * 2 * Math.PI - Math.PI / 2
@@ -98,34 +98,34 @@ function GraphView() {
       count: genreData[genre].length
     }
   })
-  
+
   const handleZoomIn = () => {
     setZoom(prev => Math.min(prev + 0.2, 3))
   }
-  
+
   const handleZoomOut = () => {
     setZoom(prev => Math.max(prev - 0.2, 0.5))
   }
-  
+
   const handleCircleClick = (genre) => {
     setSelectedGenre(genre)
   }
-  
+
   const handleBackToGraph = () => {
     setSelectedGenre(null)
   }
-  
+
   const handleBookClick = (bookId) => {
     navigate(`/books/${bookId}`)
   }
-  
+
   const handleMouseDown = (e) => {
     if (e.target.tagName === 'svg' || e.target.classList.contains('graph-canvas')) {
       setIsDragging(true)
       setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y })
     }
   }
-  
+
   const handleMouseMove = (e) => {
     if (isDragging) {
       setPan({
@@ -134,11 +134,34 @@ function GraphView() {
       })
     }
   }
-  
+
   const handleMouseUp = () => {
     setIsDragging(false)
   }
-  
+
+  const handleTouchStart = (e) => {
+    if (e.touches.length !== 1) return
+
+    const touch = e.touches[0]
+    setIsDragging(true)
+    setDragStart({ x: touch.clientX - pan.x, y: touch.clientY - pan.y })
+  }
+
+  const handleTouchMove = (e) => {
+    if (!isDragging || e.touches.length !== 1) return
+
+    const touch = e.touches[0]
+    e.preventDefault()
+    setPan({
+      x: touch.clientX - dragStart.x,
+      y: touch.clientY - dragStart.y
+    })
+  }
+
+  const handleTouchEnd = () => {
+    setIsDragging(false)
+  }
+
   useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove)
@@ -149,7 +172,7 @@ function GraphView() {
       }
     }
   }, [isDragging, dragStart])
-  
+
   if (loading) {
     return (
       <div className="container">
@@ -173,7 +196,7 @@ function GraphView() {
   if (selectedGenre) {
     // Filter books in the selected genre based on search
     const genreBooks = genreData[selectedGenre] || []
-    
+
     return (
       <div className="container">
         <div className="graph-view">
@@ -183,15 +206,15 @@ function GraphView() {
             </button>
             <h2 className="genre-title">{selectedGenre}</h2>
             <p className="genre-count">{genreBooks.length} book(s)</p>
-            <SearchBar 
+            <SearchBar
               value={searchQuery}
               onChange={setSearchQuery}
               placeholder="Search books by title..."
             />
             <div className="genre-books">
               {genreBooks.map(book => (
-                <div 
-                  key={book.id} 
+                <div
+                  key={book.id}
                   className="genre-book-item"
                   onClick={() => handleBookClick(book.id)}
                 >
@@ -218,11 +241,11 @@ function GraphView() {
       </div>
     )
   }
-  
+
   return (
     <div className="container">
       <div className="graph-view">
-        <SearchBar 
+        <SearchBar
           value={searchQuery}
           onChange={setSearchQuery}
           placeholder="Search books by title..."
@@ -232,16 +255,22 @@ function GraphView() {
           <span className="zoom-level">{Math.round(zoom * 100)}%</span>
           <button className="zoom-button" onClick={handleZoomIn}>+</button>
         </div>
-        
-        <div 
+
+        <div
           className="graph-canvas"
           onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
           style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
         >
-          <svg 
+          <svg
             ref={svgRef}
-            width="1000" 
-            height="800"
+            viewBox="0 0 1000 800"
+            width="100%"
+            height="100%"
+            preserveAspectRatio="xMidYMid meet"
             style={{
               transform: `scale(${zoom}) translate(${pan.x / zoom}px, ${pan.y / zoom}px)`,
               transformOrigin: 'center'
@@ -249,34 +278,34 @@ function GraphView() {
           >
             <defs>
               <filter id="shadow">
-                <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.15"/>
+                <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.15" />
               </filter>
             </defs>
-            
+
             {/* Draw connections */}
             <g className="connections">
               {Object.entries(genreConnections).map(([connection, bookIds]) => {
                 const [genre1, genre2] = connection.split('|')
                 const pos1 = genrePositions[genre1]
                 const pos2 = genrePositions[genre2]
-                
+
                 // Calculate angle for offsetting parallel lines
                 const dx = pos2.x - pos1.x
                 const dy = pos2.y - pos1.y
                 const angle = Math.atan2(dy, dx)
                 const perpAngle = angle + Math.PI / 2
-                
+
                 // Draw multiple lines if multiple books connect these genres
                 return bookIds.map((bookId, index) => {
                   // Offset lines perpendicular to the connection
                   const numLines = bookIds.length
-                  const offset = numLines > 1 
-                    ? ((index - (numLines - 1) / 2) * 3) 
+                  const offset = numLines > 1
+                    ? ((index - (numLines - 1) / 2) * 3)
                     : 0
-                  
+
                   const offsetX = Math.cos(perpAngle) * offset
                   const offsetY = Math.sin(perpAngle) * offset
-                  
+
                   return (
                     <line
                       key={`${connection}-${bookId}`}
@@ -292,15 +321,15 @@ function GraphView() {
                 })
               })}
             </g>
-            
+
             {/* Draw genre circles */}
             <g className="genres">
               {genres.map(genre => {
                 const pos = genrePositions[genre]
                 const circleRadius = 40 + Math.min(pos.count * 8, 40)
-                
+
                 return (
-                  <g 
+                  <g
                     key={genre}
                     className="genre-circle-group"
                     onClick={() => handleCircleClick(genre)}
@@ -345,12 +374,12 @@ function GraphView() {
             </g>
           </svg>
         </div>
-        
+
         {books.length > 0 && genres.length === 0 && (
           <div className="no-genres">
             <p>
-              {searchQuery 
-                ? "No books match your search. Try a different query." 
+              {searchQuery
+                ? "No books match your search. Try a different query."
                 : "No genres found in your books."}
             </p>
           </div>
