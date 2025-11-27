@@ -41,15 +41,6 @@ function GenreTagInput({ genres, onChange }) {
   }
 
   const handleKeyDown = (e) => {
-    // Double-space detection via key events so it works even if the keyboard
-    // normalizes spaces in the value (common on mobile).
-    if (e.key === ' ' && inputValue.endsWith(' ') && inputValue.trim()) {
-      // Second consecutive space → add the genre
-      e.preventDefault()
-      addGenre(inputValue.trim())
-      return
-    }
-
     if (e.key === 'Backspace' && !inputValue && genres.length > 0) {
       // Remove last genre on backspace if input is empty
       removeGenre(genres.length - 1)
@@ -86,6 +77,24 @@ function GenreTagInput({ genres, onChange }) {
   }
 
   const handleInputChange = (value) => {
+    // Detect double-space style endings from value changes so it works on mobile too.
+    // Many mobile keyboards convert double-space to ". " automatically, so we treat
+    // both "  " and ". " at the end as a signal to add the genre.
+    let newGenre = null
+
+    if (value.endsWith('  ')) {
+      newGenre = value.trim()
+    } else if (value.endsWith('. ')) {
+      newGenre = value.slice(0, -2).trim() // remove the auto-inserted ". "
+    }
+
+    if (newGenre) {
+      if (newGenre) {
+        addGenre(newGenre)
+      }
+      return
+    }
+
     setInputValue(value)
     setShowSuggestions(value.trim().length > 0)
   }

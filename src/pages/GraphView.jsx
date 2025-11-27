@@ -124,8 +124,6 @@ function GraphView() {
     // Only respond to primary button / single touch
     if (e.pointerType === 'mouse' && e.button !== 0) return
 
-    e.currentTarget.setPointerCapture?.(e.pointerId)
-
     setIsDragging(true)
     const currentPan = panRef.current
     dragStartRef.current = {
@@ -148,7 +146,6 @@ function GraphView() {
   }
 
   const handlePointerUp = (e) => {
-    e.currentTarget.releasePointerCapture?.(e.pointerId)
     setIsDragging(false)
   }
 
