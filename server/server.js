@@ -37,11 +37,12 @@ const upload = multer({
 // Get all books or search books
 app.get('/api/books', async (req, res) => {
   try {
-    const { search, optimized } = req.query;
+    const { search, optimized, is_bookclub } = req.query;
+    const isBookclubOnly = is_bookclub === 'true' || is_bookclub === '1';
     
     // Use optimized version for list views (excludes description)
     if (optimized === 'true') {
-      const books = await getBooksListOptimized();
+      const books = await getBooksListOptimized({ isBookclubOnly });
       res.json(books);
     } else if (search && search.trim()) {
       const books = await searchBooks(search.trim());
@@ -104,7 +105,7 @@ app.delete('/api/books/:id', async (req, res) => {
 // Create a new book
 app.post('/api/books', upload.single('cover'), async (req, res) => {
   try {
-    const { title, description, genres } = req.body;
+    const { title, description, genres, is_bookclub } = req.body;
     
     if (!title || !title.trim()) {
       return res.status(400).json({ error: 'Title is required' });
@@ -119,6 +120,11 @@ app.post('/api/books', upload.single('cover'), async (req, res) => {
         return res.status(400).json({ error: 'Invalid genres format' });
       }
     }
+    // Parse is_bookclub flag (checkbox / string from form-data)
+    const isBookclub =
+      is_bookclub === 'true' ||
+      is_bookclub === '1' ||
+      is_bookclub === 'on';
     
     // Get cover image buffer if uploaded
     const coverBuffer = req.file ? req.file.buffer : null;
@@ -127,7 +133,8 @@ app.post('/api/books', upload.single('cover'), async (req, res) => {
       title: title.trim(),
       description: description?.trim() || '',
       cover: coverBuffer,
-      genres: genresArray
+      genres: genresArray,
+      isBookclub,
     });
     
     res.status(201).json(newBook);

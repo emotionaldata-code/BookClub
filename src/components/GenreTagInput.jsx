@@ -41,10 +41,7 @@ function GenreTagInput({ genres, onChange }) {
   }
 
   const handleKeyDown = (e) => {
-    if (e.key === ' ' && inputValue.trim()) {
-      e.preventDefault()
-      addGenre(inputValue.trim())
-    } else if (e.key === 'Backspace' && !inputValue && genres.length > 0) {
+    if (e.key === 'Backspace' && !inputValue && genres.length > 0) {
       // Remove last genre on backspace if input is empty
       removeGenre(genres.length - 1)
     } else if (e.key === 'Enter' && filteredSuggestions.length > 0) {
@@ -80,6 +77,16 @@ function GenreTagInput({ genres, onChange }) {
   }
 
   const handleInputChange = (value) => {
+    // Detect double space at the end to add a new genre.
+    // This works on both desktop and mobile where key events can be unreliable.
+    if (value.endsWith('  ')) {
+      const newGenre = value.trim()
+      if (newGenre) {
+        addGenre(newGenre)
+        return
+      }
+    }
+
     setInputValue(value)
     setShowSuggestions(value.trim().length > 0)
   }
@@ -124,7 +131,7 @@ function GenreTagInput({ genres, onChange }) {
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
             onFocus={() => inputValue.trim() && setShowSuggestions(true)}
-            placeholder={genres.length === 0 ? "Type genre and press space..." : ""}
+            placeholder={genres.length === 0 ? "Type genre and press space twice..." : ""}
             className="genre-tag-input-field"
           />
         </div>
@@ -148,7 +155,7 @@ function GenreTagInput({ genres, onChange }) {
         )}
       </div>
       <p className="genre-tag-hint">
-        Press Space to add a genre • Suggestions show existing genres
+        Type a genre and press Space twice to add it • Suggestions show existing genres
       </p>
     </div>
   )

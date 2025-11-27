@@ -8,7 +8,8 @@ function UploadBook() {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    genres: []
+    genres: [],
+    is_bookclub: false,
   })
   const [coverFile, setCoverFile] = useState(null)
   const [coverPreview, setCoverPreview] = useState(null)
@@ -17,8 +18,11 @@ function UploadBook() {
   const [success, setSuccess] = useState(false)
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+    const { name, value, type, checked } = e.target
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }))
   }
 
   const handleGenresChange = (newGenres) => {
@@ -66,6 +70,7 @@ function UploadBook() {
       formDataToSend.append('title', formData.title.trim())
       formDataToSend.append('description', formData.description.trim())
       formDataToSend.append('genres', JSON.stringify(formData.genres))
+      formDataToSend.append('is_bookclub', formData.is_bookclub ? 'true' : 'false')
       
       if (coverFile) {
         formDataToSend.append('cover', coverFile)
@@ -85,7 +90,7 @@ function UploadBook() {
       setSuccess(true)
       
       // Reset form
-      setFormData({ title: '', description: '', genres: [] })
+      setFormData({ title: '', description: '', genres: [], is_bookclub: false })
       setCoverFile(null)
       setCoverPreview(null)
       
@@ -200,6 +205,24 @@ function UploadBook() {
               genres={formData.genres}
               onChange={handleGenresChange}
             />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="is_bookclub" className="form-label">
+              BookClub Read
+            </label>
+            <div className="checkbox-row">
+              <input
+                type="checkbox"
+                id="is_bookclub"
+                name="is_bookclub"
+                checked={formData.is_bookclub}
+                onChange={handleInputChange}
+              />
+              <span className="checkbox-label">
+                Mark this book as a BookClub read (it will appear on the BookClub Reads page)
+              </span>
+            </div>
           </div>
 
           <div className="form-actions">

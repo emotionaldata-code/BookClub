@@ -15,6 +15,21 @@
   margin-bottom: 24px;
 }
 
+.checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.checkbox-row input[type="checkbox"] {
+  margin-top: 3px;
+}
+
+.checkbox-label {
+  font-size: 14px;
+  color: #34495e;
+}
+
 .form-label {
   display: block;
   margin-bottom: 8px;

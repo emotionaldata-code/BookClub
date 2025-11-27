@@ -30,8 +30,13 @@ export async function createSchema(clientOrPool = pool) {
       id TEXT PRIMARY KEY,
       title TEXT NOT NULL,
       description TEXT,
-      cover BYTEA
+      cover BYTEA,
+      is_bookclub BOOLEAN NOT NULL DEFAULT FALSE
     );
+
+    -- Ensure new columns exist even if table was created previously
+    ALTER TABLE books
+      ADD COLUMN IF NOT EXISTS is_bookclub BOOLEAN NOT NULL DEFAULT FALSE;
 
     CREATE TABLE IF NOT EXISTS genres (
       id SERIAL PRIMARY KEY,
@@ -111,14 +116,21 @@ export async function initializeDatabase(force = false) {
           // Insert or update book
           await client.query(
             `
-            INSERT INTO books (id, title, description, cover)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO books (id, title, description, cover, is_bookclub)
+            VALUES ($1, $2, $3, $4, $5)
             ON CONFLICT (id) DO UPDATE SET
               title = EXCLUDED.title,
               description = EXCLUDED.description,
-              cover = EXCLUDED.cover
+              cover = EXCLUDED.cover,
+              is_bookclub = EXCLUDED.is_bookclub
           `,
-            [folder, data.title || folder, data.description || '', coverData]
+            [
+              folder,
+              data.title || folder,
+              data.description || '',
+              coverData,
+              data.is_bookclub === true
+            ]
           );
 
           // Insert genres and link them to the book
@@ -179,7 +191,7 @@ export async function initializeDatabase(force = false) {
 export async function getAllBooks() {
   const { rows: books } = await pool.query(
     `
-      SELECT id, title, description, cover
+      SELECT id, title, description, cover, is_bookclub
       FROM books
       ORDER BY title
     `
@@ -206,6 +218,7 @@ export async function getAllBooks() {
       title: book.title,
       description: book.description,
       cover: book.cover ? `data:image/png;base64,${book.cover.toString('base64')}` : null,
+      is_bookclub: book.is_bookclub,
       genres,
     });
   }
@@ -214,11 +227,12 @@ export async function getAllBooks() {
 }
 
 // Get books list (optimized - without description for faster list queries)
-export async function getBooksListOptimized() {
+export async function getBooksListOptimized({ isBookclubOnly = false } = {}) {
   const { rows: books } = await pool.query(
     `
-      SELECT id, title, cover
+      SELECT id, title, cover, is_bookclub
       FROM books
+      ${isBookclubOnly ? 'WHERE is_bookclub = TRUE' : ''}
       ORDER BY title
     `
   );
@@ -243,6 +257,7 @@ export async function getBooksListOptimized() {
       id: book.id,
       title: book.title,
       cover: book.cover ? `data:image/png;base64,${book.cover.toString('base64')}` : null,
+      is_bookclub: book.is_bookclub,
       genres,
     });
   }
@@ -267,7 +282,7 @@ export async function getAllGenres() {
 export async function searchBooks(query) {
   const { rows: books } = await pool.query(
     `
-      SELECT id, title, description, cover
+      SELECT id, title, description, cover, is_bookclub
       FROM books
       WHERE title ILIKE $1
       ORDER BY title
@@ -296,6 +311,7 @@ export async function searchBooks(query) {
       title: book.title,
       description: book.description,
       cover: book.cover ? `data:image/png;base64,${book.cover.toString('base64')}` : null,
+      is_bookclub: book.is_bookclub,
       genres,
     });
   }
@@ -307,7 +323,7 @@ export async function searchBooks(query) {
 export async function getBookById(id) {
   const { rows } = await pool.query(
     `
-      SELECT id, title, description, cover
+      SELECT id, title, description, cover, is_bookclub
       FROM books
       WHERE id = $1
     `,
@@ -344,7 +360,7 @@ export async function getBookById(id) {
 
 // Create a new book
 export async function createBook(bookData) {
-  const { title, description, cover, genres } = bookData;
+  const { title, description, cover, genres, isBookclub = false } = bookData;
 
   // Generate a unique ID from title
   const id = title.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
@@ -356,10 +372,10 @@ export async function createBook(bookData) {
 
     await client.query(
       `
-        INSERT INTO books (id, title, description, cover)
-        VALUES ($1, $2, $3, $4)
+        INSERT INTO books (id, title, description, cover, is_bookclub)
+        VALUES ($1, $2, $3, $4, $5)
       `,
-      [id, title, description || '', cover || null]
+      [id, title, description || '', cover || null, isBookclub]
     );
 
     if (genres && Array.isArray(genres) && genres.length > 0) {
