@@ -13,6 +13,32 @@ function BookCard({ book }) {
       </div>
       <div className="book-card-content">
         <h3 className="book-card-title">{book.title}</h3>
+        {book.author && (
+          <p className="book-card-author">by {book.author}</p>
+        )}
+        {book.writer && (
+          <p className="book-card-writer-meta">Added by {book.writer}</p>
+        )}
+        {book.rating != null && book.rating > 0 && (
+          <div className="book-card-rating">
+            {[1, 2, 3, 4, 5].map((star) => {
+              let variant = 'empty'
+              if (book.rating >= star) {
+                variant = 'full'
+              } else if (book.rating >= star - 0.5) {
+                variant = 'half'
+              }
+              return (
+                <span
+                  key={star}
+                  className={`rating-star rating-star-${variant}`}
+                >
+                  ★
+                </span>
+              )
+            })}
+          </div>
+        )}
         {book.genres && book.genres.length > 0 && (
           <div className="book-card-genres">
             {book.genres.map((genre, index) => (

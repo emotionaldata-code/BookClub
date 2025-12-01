@@ -25,7 +25,9 @@ function Home() {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim()
       filtered = filtered.filter(book => 
-        book.title.toLowerCase().includes(query)
+        book.title.toLowerCase().includes(query) ||
+        (book.author && book.author.toLowerCase().includes(query)) ||
+        (book.writer && book.writer.toLowerCase().includes(query))
       )
     }
 
@@ -91,7 +93,7 @@ function Home() {
         <SearchBar 
           value={searchQuery}
           onChange={setSearchQuery}
-          placeholder="Search books by title..."
+          placeholder="Search by title, author, or writer..."
         />
         
         <GenreFilter 

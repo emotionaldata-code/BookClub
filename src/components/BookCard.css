@@ -50,6 +50,40 @@
   flex-direction: column;
 }
 
+.book-card-author {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.book-card-writer-meta {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.book-card-rating {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.book-card-rating .rating-star {
+  color: #bdc3c7;
+}
+
+.book-card-rating .rating-star-full {
+  color: #f1c40f;
+}
+
+.book-card-rating .rating-star-half {
+  background: linear-gradient(90deg, #f1c40f 50%, #bdc3c7 50%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
 .book-card-title {
   font-size: 1.25rem;
   font-weight: 700;

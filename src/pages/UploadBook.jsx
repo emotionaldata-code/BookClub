@@ -10,6 +10,9 @@ function UploadBook() {
     description: '',
     genres: [],
     is_bookclub: false,
+    writer: '',
+    author: '',
+    rating: 0,
   })
   const [coverFile, setCoverFile] = useState(null)
   const [coverPreview, setCoverPreview] = useState(null)
@@ -71,6 +74,13 @@ function UploadBook() {
       formDataToSend.append('description', formData.description.trim())
       formDataToSend.append('genres', JSON.stringify(formData.genres))
       formDataToSend.append('is_bookclub', formData.is_bookclub ? 'true' : 'false')
+      formDataToSend.append('writer', formData.writer.trim())
+      formDataToSend.append('author', formData.author.trim())
+      // Send empty string for rating when 0 so backend treats it as null
+      formDataToSend.append(
+        'rating',
+        formData.rating > 0 ? String(formData.rating) : ''
+      )
       
       if (coverFile) {
         formDataToSend.append('cover', coverFile)
@@ -90,7 +100,15 @@ function UploadBook() {
       setSuccess(true)
       
       // Reset form
-      setFormData({ title: '', description: '', genres: [], is_bookclub: false })
+      setFormData({
+        title: '',
+        description: '',
+        genres: [],
+        is_bookclub: false,
+        writer: '',
+        author: '',
+        rating: 0,
+      })
       setCoverFile(null)
       setCoverPreview(null)
       
@@ -183,6 +201,36 @@ function UploadBook() {
           </div>
 
           <div className="form-group">
+            <label htmlFor="author" className="form-label">
+              Author (of the book)
+            </label>
+            <input
+              type="text"
+              id="author"
+              name="author"
+              value={formData.author}
+              onChange={handleInputChange}
+              placeholder="Enter book author..."
+              className="form-input"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="writer" className="form-label">
+              Writer (who added this book / description)
+            </label>
+            <input
+              type="text"
+              id="writer"
+              name="writer"
+              value={formData.writer}
+              onChange={handleInputChange}
+              placeholder="Enter your name..."
+              className="form-input"
+            />
+          </div>
+
+          <div className="form-group">
             <label htmlFor="description" className="form-label">
               Description
             </label>
@@ -205,6 +253,51 @@ function UploadBook() {
               genres={formData.genres}
               onChange={handleGenresChange}
             />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">
+              Rating
+            </label>
+            <div className="rating-input">
+              <div className="rating-stars">
+                {[1, 2, 3, 4, 5].map((star) => {
+                  let variant = 'empty'
+                  if (formData.rating >= star) {
+                    variant = 'full'
+                  } else if (formData.rating >= star - 0.5) {
+                    variant = 'half'
+                  }
+                  return (
+                    <span
+                      key={star}
+                      className={`rating-star rating-star-${variant}`}
+                    >
+                      ★
+                    </span>
+                  )
+                })}
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="5"
+                step="0.5"
+                value={formData.rating}
+                onChange={(e) =>
+                  setFormData(prev => ({
+                    ...prev,
+                    rating: parseFloat(e.target.value),
+                  }))
+                }
+                className="rating-slider"
+              />
+              <div className="rating-value">
+                {formData.rating > 0
+                  ? `${formData.rating.toFixed(1)} / 5`
+                  : 'No rating'}
+              </div>
+            </div>
           </div>
 
           <div className="form-group">

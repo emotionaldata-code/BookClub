@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
 import dotenv from 'dotenv';
-import { getAllBooks, searchBooks, getBookById, initializeDatabase, isDatabaseEmpty, createBook, getBooksListOptimized, getAllGenres, deleteBook } from './db.js';
+import { getAllBooks, searchBooks, getBookById, initializeDatabase, isDatabaseEmpty, createBook, getBooksListOptimized, getAllGenres, deleteBook, getCommentsForBook, addCommentToBook } from './db.js';
 
 dotenv.config();
 
@@ -85,6 +85,35 @@ app.get('/api/books/:id', async (req, res) => {
   }
 });
 
+// Get comments for a book
+app.get('/api/books/:id/comments', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const comments = await getCommentsForBook(id);
+    res.json(comments);
+  } catch (error) {
+    console.error('Error fetching comments:', error);
+    res.status(500).json({ error: 'Failed to fetch comments' });
+  }
+});
+
+// Add a comment to a book
+app.post('/api/books/:id/comments', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { author, text } = req.body;
+
+    const newComment = await addCommentToBook(id, { author, text });
+    res.status(201).json(newComment);
+  } catch (error) {
+    console.error('Error creating comment:', error);
+    if (error.message === 'Comment text is required') {
+      return res.status(400).json({ error: error.message });
+    }
+    res.status(500).json({ error: 'Failed to create comment' });
+  }
+});
+
 // Delete a book by ID
 app.delete('/api/books/:id', async (req, res) => {
   try {
@@ -105,7 +134,7 @@ app.delete('/api/books/:id', async (req, res) => {
 // Create a new book
 app.post('/api/books', upload.single('cover'), async (req, res) => {
   try {
-    const { title, description, genres, is_bookclub } = req.body;
+    const { title, description, genres, is_bookclub, writer, author, rating } = req.body;
     
     if (!title || !title.trim()) {
       return res.status(400).json({ error: 'Title is required' });
@@ -125,6 +154,15 @@ app.post('/api/books', upload.single('cover'), async (req, res) => {
       is_bookclub === 'true' ||
       is_bookclub === '1' ||
       is_bookclub === 'on';
+
+    // Parse rating as 0–5 (with optional halves)
+    let numericRating = null;
+    if (typeof rating === 'string' && rating.trim() !== '') {
+      const parsed = parseFloat(rating);
+      if (!Number.isNaN(parsed) && parsed >= 0 && parsed <= 5) {
+        numericRating = parsed;
+      }
+    }
     
     // Get cover image buffer if uploaded
     const coverBuffer = req.file ? req.file.buffer : null;
@@ -135,6 +173,9 @@ app.post('/api/books', upload.single('cover'), async (req, res) => {
       cover: coverBuffer,
       genres: genresArray,
       isBookclub,
+      writer: writer?.trim() || null,
+      author: author?.trim() || null,
+      rating: numericRating,
     });
     
     res.status(201).json(newBook);

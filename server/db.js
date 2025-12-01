@@ -31,12 +31,35 @@ export async function createSchema(clientOrPool = pool) {
       title TEXT NOT NULL,
       description TEXT,
       cover BYTEA,
-      is_bookclub BOOLEAN NOT NULL DEFAULT FALSE
+      is_bookclub BOOLEAN NOT NULL DEFAULT FALSE,
+      writer TEXT,
+      author TEXT,
+      rating NUMERIC(2,1)
     );
 
     -- Ensure new columns exist even if table was created previously
     ALTER TABLE books
       ADD COLUMN IF NOT EXISTS is_bookclub BOOLEAN NOT NULL DEFAULT FALSE;
+
+    ALTER TABLE books
+      ADD COLUMN IF NOT EXISTS writer TEXT;
+
+    ALTER TABLE books
+      ADD COLUMN IF NOT EXISTS author TEXT;
+
+    ALTER TABLE books
+      ADD COLUMN IF NOT EXISTS rating NUMERIC(2,1);
+
+    CREATE TABLE IF NOT EXISTS comments (
+      id SERIAL PRIMARY KEY,
+      book_id TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+      author TEXT,
+      text TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_comments_book_id ON comments(book_id);
+    CREATE INDEX IF NOT EXISTS idx_comments_book_created_at ON comments(book_id, created_at DESC);
 
     CREATE TABLE IF NOT EXISTS genres (
       id SERIAL PRIMARY KEY,
@@ -116,20 +139,26 @@ export async function initializeDatabase(force = false) {
           // Insert or update book
           await client.query(
             `
-            INSERT INTO books (id, title, description, cover, is_bookclub)
-            VALUES ($1, $2, $3, $4, $5)
+            INSERT INTO books (id, title, description, cover, is_bookclub, writer, author, rating)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             ON CONFLICT (id) DO UPDATE SET
               title = EXCLUDED.title,
               description = EXCLUDED.description,
               cover = EXCLUDED.cover,
-              is_bookclub = EXCLUDED.is_bookclub
+              is_bookclub = EXCLUDED.is_bookclub,
+              writer = EXCLUDED.writer,
+              author = EXCLUDED.author,
+              rating = EXCLUDED.rating
           `,
             [
               folder,
               data.title || folder,
               data.description || '',
               coverData,
-              data.is_bookclub === true
+              data.is_bookclub === true,
+              data.writer || null,
+              data.author || null,
+              typeof data.rating === 'number' ? data.rating : null
             ]
           );
 
@@ -191,7 +220,7 @@ export async function initializeDatabase(force = false) {
 export async function getAllBooks() {
   const { rows: books } = await pool.query(
     `
-      SELECT id, title, description, cover, is_bookclub
+      SELECT id, title, description, cover, is_bookclub, writer, author, rating
       FROM books
       ORDER BY title
     `
@@ -219,6 +248,9 @@ export async function getAllBooks() {
       description: book.description,
       cover: book.cover ? `data:image/png;base64,${book.cover.toString('base64')}` : null,
       is_bookclub: book.is_bookclub,
+      writer: book.writer,
+      author: book.author,
+      rating: book.rating != null ? Number(book.rating) : null,
       genres,
     });
   }
@@ -230,7 +262,7 @@ export async function getAllBooks() {
 export async function getBooksListOptimized({ isBookclubOnly = false } = {}) {
   const { rows: books } = await pool.query(
     `
-      SELECT id, title, cover, is_bookclub
+      SELECT id, title, cover, is_bookclub, writer, author, rating
       FROM books
       ${isBookclubOnly ? 'WHERE is_bookclub = TRUE' : ''}
       ORDER BY title
@@ -258,6 +290,9 @@ export async function getBooksListOptimized({ isBookclubOnly = false } = {}) {
       title: book.title,
       cover: book.cover ? `data:image/png;base64,${book.cover.toString('base64')}` : null,
       is_bookclub: book.is_bookclub,
+      writer: book.writer,
+      author: book.author,
+      rating: book.rating != null ? Number(book.rating) : null,
       genres,
     });
   }
@@ -282,7 +317,7 @@ export async function getAllGenres() {
 export async function searchBooks(query) {
   const { rows: books } = await pool.query(
     `
-      SELECT id, title, description, cover, is_bookclub
+      SELECT id, title, description, cover, is_bookclub, writer, author, rating
       FROM books
       WHERE title ILIKE $1
       ORDER BY title
@@ -312,6 +347,9 @@ export async function searchBooks(query) {
       description: book.description,
       cover: book.cover ? `data:image/png;base64,${book.cover.toString('base64')}` : null,
       is_bookclub: book.is_bookclub,
+      writer: book.writer,
+      author: book.author,
+      rating: book.rating != null ? Number(book.rating) : null,
       genres,
     });
   }
@@ -323,7 +361,7 @@ export async function searchBooks(query) {
 export async function getBookById(id) {
   const { rows } = await pool.query(
     `
-      SELECT id, title, description, cover, is_bookclub
+      SELECT id, title, description, cover, is_bookclub, writer, author, rating
       FROM books
       WHERE id = $1
     `,
@@ -354,13 +392,17 @@ export async function getBookById(id) {
     title: book.title,
     description: book.description,
     cover: book.cover ? `data:image/png;base64,${book.cover.toString('base64')}` : null,
+    is_bookclub: book.is_bookclub,
+    writer: book.writer,
+    author: book.author,
+    rating: book.rating != null ? Number(book.rating) : null,
     genres,
   };
 }
 
 // Create a new book
 export async function createBook(bookData) {
-  const { title, description, cover, genres, isBookclub = false } = bookData;
+  const { title, description, cover, genres, isBookclub = false, writer = null, author = null, rating = null } = bookData;
 
   // Generate a unique ID from title
   const id = title.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
@@ -372,10 +414,19 @@ export async function createBook(bookData) {
 
     await client.query(
       `
-        INSERT INTO books (id, title, description, cover, is_bookclub)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO books (id, title, description, cover, is_bookclub, writer, author, rating)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       `,
-      [id, title, description || '', cover || null, isBookclub]
+      [
+        id,
+        title,
+        description || '',
+        cover || null,
+        isBookclub,
+        writer || null,
+        author || null,
+        typeof rating === 'number' ? rating : null,
+      ]
     );
 
     if (genres && Array.isArray(genres) && genres.length > 0) {
@@ -437,6 +488,48 @@ export async function deleteBook(id) {
   );
 
   return rowCount > 0;
+}
+
+export async function getCommentsForBook(bookId) {
+  const { rows } = await pool.query(
+    `
+      SELECT id, author, text, created_at
+      FROM comments
+      WHERE book_id = $1
+      ORDER BY created_at DESC
+    `,
+    [bookId]
+  );
+
+  return rows.map((row) => ({
+    id: row.id,
+    author: row.author,
+    text: row.text,
+    created_at: row.created_at,
+  }));
+}
+
+export async function addCommentToBook(bookId, { author, text }) {
+  if (!text || !text.trim()) {
+    throw new Error('Comment text is required');
+  }
+
+  const { rows } = await pool.query(
+    `
+      INSERT INTO comments (book_id, author, text)
+      VALUES ($1, $2, $3)
+      RETURNING id, author, text, created_at
+    `,
+    [bookId, author && author.trim() ? author.trim() : null, text.trim()]
+  );
+
+  const row = rows[0];
+  return {
+    id: row.id,
+    author: row.author,
+    text: row.text,
+    created_at: row.created_at,
+  };
 }
 
 export default pool;
