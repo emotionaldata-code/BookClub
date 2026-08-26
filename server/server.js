@@ -4,7 +4,19 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
 import dotenv from 'dotenv';
-import { getAllBooks, searchBooks, getBookById, initializeDatabase, isDatabaseEmpty, createBook, getBooksListOptimized, getAllGenres, deleteBook, getCommentsForBook, addCommentToBook } from './db.js';
+import {
+  addCommentToBook,
+  createBook,
+  createSchema,
+  deleteBook,
+  getAllBooks,
+  getAllGenres,
+  getBookById,
+  getBooksListOptimized,
+  getCommentsForBook,
+  isDatabaseEmpty,
+  searchBooks,
+} from './db.js';
 
 dotenv.config();
 
@@ -188,20 +200,6 @@ app.post('/api/books', upload.single('cover'), async (req, res) => {
   }
 });
 
-// Reinitialize database (useful for development - force reload from books folder)
-app.post('/api/reinitialize', async (req, res) => {
-  try {
-    const result = await initializeDatabase(true); // Force reinitialize
-    res.json({
-      message: 'Database reinitialized successfully',
-      ...result,
-    });
-  } catch (error) {
-    console.error('Error reinitializing database:', error);
-    res.status(500).json({ error: 'Failed to reinitialize database' });
-  }
-});
-
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
   try {
@@ -236,15 +234,9 @@ if (isProduction) {
 async function startServer() {
   try {
     console.log('Checking database status...');
-    const initResult = await initializeDatabase(false);
-    if (initResult.skipped) {
-      const books = await getAllBooks();
-      console.log(`Database ready with ${books.length} books.`);
-    } else if (initResult.success) {
-      console.log('✓ Database initialized for the first time');
-    } else {
-      console.error('✗ Database initialization failed:', initResult.message);
-    }
+    await createSchema();
+    const books = await getAllBooks();
+    console.log(`Database ready with ${books.length} books.`);
 
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
@@ -261,4 +253,3 @@ async function startServer() {
 }
 
 startServer();
-

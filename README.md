@@ -64,27 +64,6 @@ BookClub/
 
 Done! Book is instantly available.
 
-### Legacy: books/ Folder (Optional)
-
-The `books/` folder is now **optional** and only used for initial database seeding.
-
-Each book should be in its own folder inside `books/` with:
-
-1. **cover.png**: The book cover image
-2. **description.md**: A markdown file with frontmatter containing:
-
-```markdown
----
-title: Your Book Title
-genres:
-  - thriller
-  - romance
-description: A compelling description of your book
----
-```
-
-Then run: `node server/init-db.js --force`
-
 ## Getting Started
 
 ### Installation
@@ -118,29 +97,10 @@ The frontend automatically proxies API requests to the backend.
 
 ### Database Initialization
 
-**First Run:**
-On first startup, the server automatically:
-1. Creates the SQLite database (`server/bookclub.db`)
-2. Reads all books from the `books/` folder
-3. Populates the database with book information
-
-**Subsequent Runs:**
-The database persists between restarts. The server will NOT reinitialize unless the database is empty.
-
-**Manual Initialization:**
-```bash
-# Initialize only if database is empty
-node server/init-db.js
-
-# Force reinitialize (WARNING: deletes all existing data)
-node server/init-db.js --force
-```
-
-**During Development:**
-To reload books from the `books/` folder after making changes:
-```bash
-curl -X POST http://localhost:6310/api/reinitialize
-```
+Set `POSTGRES_URL` to the PostgreSQL connection string. On startup, the backend
+creates or updates the required schema and then uses the database as the only
+source of book data. An empty database remains empty until books are added
+through the web interface or API.
 
 ### Build for Production
 
@@ -158,15 +118,6 @@ The static files will be generated in the `dist/` folder. Deploy both the `dist/
 3. Submit
 
 The book is instantly added to the database!
-
-### Add New Book (Legacy Method)
-1. Create folder in `books/` (e.g., `books/my_book/`)
-2. Add `cover.png` and `description.md`
-3. Run: `node server/init-db.js --force`
-
-### Can I Delete the books/ Folder?
-
-**Yes!** After initial database setup, you can delete the `books/` folder. The app now relies 100% on SQLite database with web-based uploads.
 
 ## Graph View
 
@@ -293,16 +244,14 @@ The backend provides the following REST API endpoints:
 - `GET /api/books/:id` - Get a single book by ID
 - `GET /api/genres` - Get all unique genres from the database
 - `POST /api/books` - Create a new book (multipart/form-data with cover upload)
-- `POST /api/reinitialize` - Force reinitialize database from books folder (legacy)
 - `GET /api/health` - Health check endpoint (returns database status and book count)
 
 ## Technologies Used
 
 ### Backend
 - **Express**: Web server framework
-- **better-sqlite3**: Fast, synchronous SQLite3 library
+- **pg**: PostgreSQL client
 - **multer**: File upload middleware for handling images
-- **gray-matter**: Parse markdown frontmatter (legacy)
 - **CORS**: Enable cross-origin requests
 
 ### Frontend
@@ -319,4 +268,3 @@ The backend provides the following REST API endpoints:
 ## License
 
 MIT
-

@@ -1,15 +1,8 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import matter from 'gray-matter';
 import dotenv from 'dotenv';
 import pkg from 'pg';
 
 dotenv.config();
 const { Pool } = pkg;
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const connectionString = process.env.POSTGRES_URL;
 
@@ -84,136 +77,6 @@ export async function createSchema(clientOrPool = pool) {
 export async function isDatabaseEmpty() {
   const { rows } = await pool.query('SELECT COUNT(*) AS count FROM books');
   return Number(rows[0].count) === 0;
-}
-
-// Function to initialize database with books from books folder
-export async function initializeDatabase(force = false) {
-  const booksDir = path.join(__dirname, '..', 'books');
-
-  if (!fs.existsSync(booksDir)) {
-    console.log('Books directory not found');
-    return { success: false, message: 'Books directory not found' };
-  }
-
-  const client = await pool.connect();
-
-  try {
-    await client.query('BEGIN');
-
-    // Ensure schema exists
-    await createSchema(client);
-
-    // Only clear existing data if force is true
-    if (force) {
-      console.log('Force initialization: clearing existing data...');
-      await client.query('TRUNCATE TABLE book_genres, genres, books RESTART IDENTITY');
-    } else {
-      const { rows } = await client.query('SELECT COUNT(*) AS count FROM books');
-      if (Number(rows[0].count) > 0) {
-        console.log('Database already initialized, skipping...');
-        await client.query('COMMIT');
-        return { success: true, message: 'Database already initialized', skipped: true };
-      }
-    }
-
-    const bookFolders = fs.readdirSync(booksDir);
-
-    for (const folder of bookFolders) {
-      const bookPath = path.join(booksDir, folder);
-      const stat = fs.statSync(bookPath);
-
-      if (stat.isDirectory()) {
-        const descriptionPath = path.join(bookPath, 'description.md');
-        const coverPath = path.join(bookPath, 'cover.png');
-
-        if (fs.existsSync(descriptionPath)) {
-          const descriptionContent = fs.readFileSync(descriptionPath, 'utf-8');
-          const { data } = matter(descriptionContent);
-
-          // Read cover image as blob
-          let coverData = null;
-          if (fs.existsSync(coverPath)) {
-            coverData = fs.readFileSync(coverPath);
-          }
-
-          // Insert or update book
-          await client.query(
-            `
-            INSERT INTO books (id, title, description, cover, is_bookclub, writer, author, rating)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            ON CONFLICT (id) DO UPDATE SET
-              title = EXCLUDED.title,
-              description = EXCLUDED.description,
-              cover = EXCLUDED.cover,
-              is_bookclub = EXCLUDED.is_bookclub,
-              writer = EXCLUDED.writer,
-              author = EXCLUDED.author,
-              rating = EXCLUDED.rating
-          `,
-            [
-              folder,
-              data.title || folder,
-              data.description || '',
-              coverData,
-              data.is_bookclub === true,
-              data.writer || null,
-              data.author || null,
-              typeof data.rating === 'number' ? data.rating : null
-            ]
-          );
-
-          // Insert genres and link them to the book
-          if (data.genres && Array.isArray(data.genres)) {
-            for (const genreName of data.genres) {
-              if (!genreName || !genreName.trim()) continue;
-              const genreTrimmed = genreName.trim();
-
-              await client.query(
-                `
-                INSERT INTO genres (name)
-                VALUES ($1)
-                ON CONFLICT (name) DO NOTHING
-              `,
-                [genreTrimmed]
-              );
-
-              const { rows: genreRows } = await client.query(
-                'SELECT id FROM genres WHERE name = $1',
-                [genreTrimmed]
-              );
-
-              if (genreRows[0]) {
-                await client.query(
-                  `
-                  INSERT INTO book_genres (book_id, genre_id)
-                  VALUES ($1, $2)
-                  ON CONFLICT (book_id, genre_id) DO NOTHING
-                `,
-                  [folder, genreRows[0].id]
-                );
-              }
-            }
-          }
-        }
-      }
-    }
-
-    const { rows: bookCountRows } = await client.query(
-      'SELECT COUNT(*) AS count FROM books'
-    );
-    await client.query('COMMIT');
-
-    const count = Number(bookCountRows[0].count);
-    console.log(`Database initialized successfully! Loaded ${count} books.`);
-
-    return { success: true, message: `Database initialized with ${count} books` };
-  } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Error initializing database:', error);
-    return { success: false, message: error.message };
-  } finally {
-    client.release();
-  }
 }
 
 // Get all books (full data including cover images)
@@ -533,4 +396,3 @@ export async function addCommentToBook(bookId, { author, text }) {
 }
 
 export default pool;
-
