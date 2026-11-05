@@ -95,7 +95,7 @@
 
 .book-detail-rating-value {
   font-size: 0.95rem;
-  color: #7f8c8d;
+  color: var(--text-secondary);
 }
 
 .book-detail-genres {

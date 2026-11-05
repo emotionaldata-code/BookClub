@@ -332,7 +332,7 @@ export async function createBook(bookData) {
 
     // 23505: unique_violation
     if (error.code === '23505') {
-      throw new Error('A book with this title already exists');
+      throw new Error('Esiste già un libro con questo titolo.');
     }
 
     throw error;
@@ -374,7 +374,7 @@ export async function getCommentsForBook(bookId) {
 
 export async function addCommentToBook(bookId, { author, text }) {
   if (!text || !text.trim()) {
-    throw new Error('Comment text is required');
+    throw new Error('Il testo del commento è obbligatorio.');
   }
 
   const { rows } = await pool.query(

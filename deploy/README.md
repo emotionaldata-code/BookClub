@@ -24,4 +24,12 @@ Check the BookClub production deployment history in Dokploy after pushing, then 
 
 The initial snapshot contains 22 books, 13 genres, 24 book/genre links, and 3 comments. Verify `/api/health`, `/api/books`, and `/api/genres` after deploying.
 
-The existing administration page and deletion API have no authentication; this deployment preserves the application behavior explicitly requested by the owner.
+## Amministrazione
+
+Il pannello è disponibile a `/secret_admin`. L'accesso richiede un account amministratore salvato in PostgreSQL; anche `DELETE /api/books/:id` richiede una sessione amministratore valida. Lettura, inserimento libri e commenti restano pubblici.
+
+Al primo avvio impostare `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH` e `ADMIN_ORIGIN` nell'ambiente Dokploy. L'origine di produzione è `https://book-club.edia-company.com`. La password non deve essere inserita nel codice o nel repository: l'hash scrypt si genera con `hashPassword` esportata da `server/admin-auth.js`. Conservare la password iniziale in un gestore di credenziali. Il bootstrap crea l'account soltanto se assente, senza reimpostare la password a ogni deploy.
+
+Le sessioni durano 12 ore e sono salvate nel database; il browser riceve un cookie HttpOnly, Secure in produzione e SameSite Strict. Gli endpoint di autenticazione sono `POST /api/admin/login`, `GET /api/admin/session` e `POST /api/admin/logout`. Il logout revoca la sessione. Le richieste amministrative con origine diversa da `ADMIN_ORIGIN` vengono rifiutate.
+
+Verifica l'autenticazione con `node --test server/admin-auth.test.js`. Per includere il test di persistenza usa `TEST_POSTGRES_URL` verso un database PostgreSQL di prova: il test crea ed elimina un proprio schema isolato. Per una verifica locale completa imposta anche `ADMIN_ORIGIN` all'URL locale del servizio.

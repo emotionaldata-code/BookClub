@@ -27,9 +27,9 @@ function BookDetail() {
       
       if (!response.ok) {
         if (response.status === 404) {
-          setError('Book not found')
+          setError('Libro non trovato')
         } else {
-          throw new Error('Failed to fetch book')
+          throw new Error('Impossibile caricare il libro')
         }
         return
       }
@@ -38,7 +38,7 @@ function BookDetail() {
       setBook(data)
     } catch (err) {
       console.error('Error fetching book:', err)
-      setError(err.message)
+      setError(err instanceof TypeError ? 'Impossibile contattare il server. Riprova.' : err.message)
     } finally {
       setLoading(false)
     }
@@ -50,13 +50,13 @@ function BookDetail() {
       setCommentsError(null)
       const res = await fetch(`/api/books/${bookId}/comments`)
       if (!res.ok) {
-        throw new Error('Failed to fetch comments')
+        throw new Error('Impossibile caricare i commenti')
       }
       const data = await res.json()
       setComments(data)
     } catch (err) {
       console.error('Error fetching comments:', err)
-      setCommentsError(err.message)
+      setCommentsError(err instanceof TypeError ? 'Impossibile contattare il server. Riprova.' : err.message)
     } finally {
       setCommentsLoading(false)
     }
@@ -83,7 +83,7 @@ function BookDetail() {
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}))
-        throw new Error(errData.error || 'Failed to add comment')
+        throw new Error(errData.error || 'Impossibile aggiungere il commento')
       }
 
       const newComment = await res.json()
@@ -92,7 +92,7 @@ function BookDetail() {
       // Keep author filled so user doesn’t need to type every time
     } catch (err) {
       console.error('Error submitting comment:', err)
-      setCommentsError(err.message)
+      setCommentsError(err instanceof TypeError ? 'Impossibile contattare il server. Riprova.' : err.message)
     } finally {
       setSubmittingComment(false)
     }
@@ -102,8 +102,8 @@ function BookDetail() {
     return (
       <div className="container">
         <div className="book-detail">
-          <Link to="/" className="back-link">← Back to Home</Link>
-          <p className="loading">Loading book...</p>
+          <Link to="/" className="back-link">← Torna alla libreria</Link>
+          <p className="loading">Caricamento del libro...</p>
         </div>
       </div>
     )
@@ -113,8 +113,8 @@ function BookDetail() {
     return (
       <div className="container">
         <div className="book-detail">
-          <Link to="/" className="back-link">← Back to Home</Link>
-          <h2>{error || 'Book not found'}</h2>
+          <Link to="/" className="back-link">← Torna alla libreria</Link>
+          <h2>{error || 'Libro non trovato'}</h2>
         </div>
       </div>
     )
@@ -123,7 +123,7 @@ function BookDetail() {
   return (
     <div className="container">
       <div className="book-detail">
-        <Link to="/" className="back-link">← Back to Home</Link>
+        <Link to="/" className="back-link">← Torna alla libreria</Link>
         
         <div className="book-detail-content">
           <div className="book-detail-cover">
@@ -139,13 +139,13 @@ function BookDetail() {
             
             {book.author && (
               <p className="book-detail-writer">
-                by <span>{book.author}</span>
+                di <span>{book.author}</span>
               </p>
             )}
             
             {book.writer && (
               <p className="book-detail-writer-meta">
-                Added by <span>{book.writer}</span>
+                Aggiunto da <span>{book.writer}</span>
               </p>
             )}
             
@@ -170,7 +170,7 @@ function BookDetail() {
                   })}
                 </span>
                 <span className="book-detail-rating-value">
-                  {book.rating.toFixed(1)} / 5
+                  {book.rating.toLocaleString('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} / 5
                 </span>
               </div>
             )}
@@ -184,32 +184,32 @@ function BookDetail() {
             )}
             
             <div className="book-detail-description">
-              <h3>Description</h3>
+              <h3>Descrizione</h3>
               <p>{book.description}</p>
             </div>
 
             <div className="book-detail-comments">
-              <h3>Comments</h3>
+              <h3>Commenti</h3>
 
               <form className="comment-form" onSubmit={handleSubmitComment}>
                 <div className="comment-form-row">
                   <div className="comment-form-group">
-                    <label htmlFor="commentAuthor">Your name</label>
+                    <label htmlFor="commentAuthor">Il tuo nome</label>
                     <input
                       id="commentAuthor"
                       type="text"
-                      placeholder="Optional"
+                      placeholder="Facoltativo"
                       value={commentAuthor}
                       onChange={(e) => setCommentAuthor(e.target.value)}
                     />
                   </div>
                 </div>
                 <div className="comment-form-group">
-                  <label htmlFor="commentText">Your comment</label>
+                  <label htmlFor="commentText">Il tuo commento</label>
                   <textarea
                     id="commentText"
                     rows="3"
-                    placeholder="Share your thoughts about this book..."
+                    placeholder="Scrivi cosa pensi di questo libro..."
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
                   />
@@ -220,34 +220,34 @@ function BookDetail() {
                     className="btn btn-primary"
                     disabled={submittingComment || !commentText.trim()}
                   >
-                    {submittingComment ? 'Adding comment…' : 'Add comment'}
+                    {submittingComment ? 'Invio in corso…' : 'Aggiungi commento'}
                   </button>
                 </div>
               </form>
 
               {commentsLoading && (
-                <p className="comments-status">Loading comments...</p>
+                <p className="comments-status">Caricamento dei commenti...</p>
               )}
               {commentsError && !commentsLoading && (
-                <p className="comments-error">Error: {commentsError}</p>
+                <p className="comments-error">Errore: {commentsError}</p>
               )}
 
               {!commentsLoading && !commentsError && (
                 <div className="comments-list">
                   {comments.length === 0 ? (
                     <p className="comments-empty">
-                      No comments yet. Be the first to share your thoughts!
+                      Non ci sono ancora commenti. Condividi per primo la tua opinione!
                     </p>
                   ) : (
                     comments.map((comment) => (
                       <div key={comment.id} className="comment-card">
                         <div className="comment-header">
                           <span className="comment-author">
-                            {comment.author || 'Anonymous'}
+                            {comment.author || 'Anonimo'}
                           </span>
                           {comment.created_at && (
                             <span className="comment-date">
-                              {new Date(comment.created_at).toLocaleString()}
+                              {new Date(comment.created_at).toLocaleString('it-IT')}
                             </span>
                           )}
                         </div>

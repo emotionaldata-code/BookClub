@@ -48,7 +48,7 @@
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: #3498db;
+  background: #1f6f9d;
   color: white;
   border-radius: 20px;
   font-size: 14px;
@@ -92,7 +92,7 @@
 }
 
 .genre-filter-search-input:focus {
-  border-color: #3498db;
+  border-color: #1f6f9d;
 }
 
 .genre-filter-suggestions {
@@ -134,7 +134,7 @@
 .genre-filter-suggestion-more {
   padding: 8px 16px;
   font-size: 13px;
-  color: #7f8c8d;
+  color: var(--text-secondary);
   font-style: italic;
   text-align: center;
   border-top: 1px solid #f0f0f0;
@@ -143,7 +143,7 @@
 .genre-filter-suggestion-empty {
   padding: 16px;
   text-align: center;
-  color: #7f8c8d;
+  color: var(--text-secondary);
   font-size: 14px;
   font-style: italic;
 }
@@ -151,7 +151,7 @@
 .genre-filter-loading {
   padding: 20px;
   text-align: center;
-  color: #7f8c8d;
+  color: var(--text-secondary);
   font-size: 14px;
 }
 

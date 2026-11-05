@@ -51,7 +51,7 @@ function Home() {
       const response = await fetch('/api/books?optimized=true')
       
       if (!response.ok) {
-        throw new Error('Failed to fetch books')
+        throw new Error('Impossibile caricare i libri')
       }
       
       const data = await response.json()
@@ -59,7 +59,7 @@ function Home() {
       setFilteredBooks(data)
     } catch (err) {
       console.error('Error fetching books:', err)
-      setError(err.message)
+      setError(err instanceof TypeError ? 'Impossibile contattare il server. Riprova.' : err.message)
     } finally {
       setLoading(false)
     }
@@ -69,7 +69,7 @@ function Home() {
     return (
       <div className="container">
         <div className="home">
-          <p className="loading">Loading books...</p>
+          <p className="loading">Caricamento dei libri...</p>
         </div>
       </div>
     )
@@ -79,7 +79,7 @@ function Home() {
     return (
       <div className="container">
         <div className="home">
-          <p className="error">Error: {error}</p>
+          <p className="error">Errore: {error}</p>
         </div>
       </div>
     )
@@ -88,12 +88,12 @@ function Home() {
   return (
     <div className="container">
       <div className="home">
-        <h2 className="page-title">Discover Books</h2>
+        <h1 className="page-title">Scopri i libri</h1>
         
         <SearchBar 
           value={searchQuery}
           onChange={setSearchQuery}
-          placeholder="Search by title, author, or writer..."
+          placeholder="Cerca per titolo, autore o nome di chi ha aggiunto il libro..."
         />
         
         <GenreFilter 
@@ -104,10 +104,10 @@ function Home() {
         {selectedGenres.length > 0 && (
           <div className="active-filters">
             <span className="active-filters-text">
-              Showing books with: {selectedGenres.join(' + ')}
+              Libri con i generi: {selectedGenres.join(' + ')}
             </span>
             <span className="active-filters-count">
-              ({filteredBooks.length} {filteredBooks.length === 1 ? 'book' : 'books'})
+              ({filteredBooks.length} {filteredBooks.length === 1 ? 'libro' : 'libri'})
             </span>
           </div>
         )}
@@ -119,11 +119,11 @@ function Home() {
         </div>
         
         {books.length === 0 && (
-          <p className="no-books">No books found. Click "+ Add Book" to add your first book!</p>
+          <p className="no-books">Nessun libro presente. Seleziona "+ Aggiungi libro" per aggiungere il primo!</p>
         )}
         {books.length > 0 && filteredBooks.length === 0 && (
           <p className="no-books">
-            No books match your filters. 
+            Nessun libro corrisponde ai filtri.
             {(searchQuery || selectedGenres.length > 0) && (
               <button 
                 className="clear-filters-btn"
@@ -132,7 +132,7 @@ function Home() {
                   setSelectedGenres([])
                 }}
               >
-                Clear all filters
+                Rimuovi tutti i filtri
               </button>
             )}
           </p>

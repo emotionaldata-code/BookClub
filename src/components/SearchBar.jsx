@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import './SearchBar.css'
 
-function SearchBar({ value, onChange, placeholder = "Search books..." }) {
+function SearchBar({ value, onChange, placeholder = "Cerca libri..." }) {
   const inputRef = useRef(null)
 
   // Handle input change with proper null/undefined checks
@@ -44,13 +44,13 @@ function SearchBar({ value, onChange, placeholder = "Search books..." }) {
         onChange={handleChange}
         placeholder={placeholder}
         className="search-input"
-        aria-label="Search"
+        aria-label="Cerca libri"
       />
       {safeValue && (
         <button 
           className="search-clear" 
           onClick={handleClear}
-          aria-label="Clear search"
+          aria-label="Cancella ricerca"
           type="button"
         >
           ×

@@ -99,13 +99,13 @@
 }
 
 .nav-tab-upload {
-  background-color: #27ae60;
+  background-color: #1f6f9d;
   color: white;
   margin-left: auto;
 }
 
 .nav-tab-upload:hover {
-  background-color: #229954;
+  background-color: #1a5d84;
 }
 
 @media (max-width: 768px) {

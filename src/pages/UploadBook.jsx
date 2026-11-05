@@ -9,7 +9,6 @@ function UploadBook() {
     title: '',
     description: '',
     genres: [],
-    is_bookclub: false,
     writer: '',
     author: '',
     rating: 0,
@@ -21,10 +20,10 @@ function UploadBook() {
   const [success, setSuccess] = useState(false)
 
   const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target
+    const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: value,
     }))
   }
 
@@ -36,11 +35,11 @@ function UploadBook() {
     const file = e.target.files[0]
     if (file) {
       if (!file.type.startsWith('image/')) {
-        setError('Please select an image file')
+        setError('Seleziona un file immagine')
         return
       }
       if (file.size > 5 * 1024 * 1024) {
-        setError('Image must be less than 5MB')
+        setError('L’immagine deve essere inferiore a 5 MB')
         return
       }
       
@@ -62,7 +61,7 @@ function UploadBook() {
     setSuccess(false)
 
     if (!formData.title.trim()) {
-      setError('Title is required')
+      setError('Il titolo è obbligatorio')
       return
     }
 
@@ -73,7 +72,6 @@ function UploadBook() {
       formDataToSend.append('title', formData.title.trim())
       formDataToSend.append('description', formData.description.trim())
       formDataToSend.append('genres', JSON.stringify(formData.genres))
-      formDataToSend.append('is_bookclub', formData.is_bookclub ? 'true' : 'false')
       formDataToSend.append('writer', formData.writer.trim())
       formDataToSend.append('author', formData.author.trim())
       // Send empty string for rating when 0 so backend treats it as null
@@ -93,7 +91,7 @@ function UploadBook() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to create book')
+        throw new Error(errorData.error || 'Impossibile aggiungere il libro')
       }
 
       const newBook = await response.json()
@@ -104,7 +102,6 @@ function UploadBook() {
         title: '',
         description: '',
         genres: [],
-        is_bookclub: false,
         writer: '',
         author: '',
         rating: 0,
@@ -118,7 +115,7 @@ function UploadBook() {
       }, 2000)
     } catch (err) {
       console.error('Error creating book:', err)
-      setError(err.message)
+      setError(err instanceof TypeError ? 'Impossibile contattare il server. Riprova.' : err.message)
     } finally {
       setLoading(false)
     }
@@ -127,11 +124,11 @@ function UploadBook() {
   return (
     <div className="container">
       <div className="upload-book">
-        <h2 className="page-title">Add New Book</h2>
+        <h1 className="page-title">Aggiungi un libro</h1>
         
         {success && (
           <div className="alert alert-success">
-            ✓ Book added successfully! Redirecting...
+            Libro aggiunto! Apertura della scheda...
           </div>
         )}
         
@@ -144,12 +141,12 @@ function UploadBook() {
         <form onSubmit={handleSubmit} className="upload-form">
           <div className="form-group">
             <label htmlFor="cover" className="form-label">
-              Book Cover
+              Copertina
             </label>
             <div className="cover-upload">
               {coverPreview ? (
                 <div className="cover-preview">
-                  <img src={coverPreview} alt="Cover preview" />
+                  <img src={coverPreview} alt="Anteprima della copertina" />
                   <button
                     type="button"
                     onClick={() => {
@@ -158,7 +155,7 @@ function UploadBook() {
                     }}
                     className="cover-remove"
                   >
-                    Remove
+                    Rimuovi
                   </button>
                 </div>
               ) : (
@@ -166,10 +163,10 @@ function UploadBook() {
                   <div className="cover-upload-placeholder">
                     <span className="cover-upload-icon">📷</span>
                     <span className="cover-upload-text">
-                      Click to upload cover image
+                      Seleziona una copertina
                     </span>
                     <span className="cover-upload-hint">
-                      PNG, JPG, WEBP (max 5MB)
+                      PNG, JPG, WEBP (massimo 5 MB)
                     </span>
                   </div>
                 </label>
@@ -186,7 +183,7 @@ function UploadBook() {
 
           <div className="form-group">
             <label htmlFor="title" className="form-label">
-              Title <span className="required">*</span>
+              Titolo <span className="required">*</span>
             </label>
             <input
               type="text"
@@ -194,7 +191,7 @@ function UploadBook() {
               name="title"
               value={formData.title}
               onChange={handleInputChange}
-              placeholder="Enter book title..."
+              placeholder="Inserisci il titolo..."
               className="form-input"
               required
             />
@@ -202,7 +199,7 @@ function UploadBook() {
 
           <div className="form-group">
             <label htmlFor="author" className="form-label">
-              Author (of the book)
+              Autore del libro
             </label>
             <input
               type="text"
@@ -210,14 +207,14 @@ function UploadBook() {
               name="author"
               value={formData.author}
               onChange={handleInputChange}
-              placeholder="Enter book author..."
+              placeholder="Inserisci l’autore..."
               className="form-input"
             />
           </div>
 
           <div className="form-group">
             <label htmlFor="writer" className="form-label">
-              Writer (who added this book / description)
+              Aggiunto da
             </label>
             <input
               type="text"
@@ -225,21 +222,21 @@ function UploadBook() {
               name="writer"
               value={formData.writer}
               onChange={handleInputChange}
-              placeholder="Enter your name..."
+              placeholder="Inserisci il tuo nome..."
               className="form-input"
             />
           </div>
 
           <div className="form-group">
             <label htmlFor="description" className="form-label">
-              Description
+              Descrizione
             </label>
             <textarea
               id="description"
               name="description"
               value={formData.description}
               onChange={handleInputChange}
-              placeholder="Enter book description..."
+              placeholder="Inserisci la descrizione..."
               className="form-textarea"
               rows="5"
             />
@@ -247,7 +244,7 @@ function UploadBook() {
 
           <div className="form-group">
             <label className="form-label">
-              Genres
+              Generi
             </label>
             <GenreTagInput
               genres={formData.genres}
@@ -257,7 +254,7 @@ function UploadBook() {
 
           <div className="form-group">
             <label className="form-label">
-              Rating
+              Valutazione
             </label>
             <div className="rating-input">
               <div className="rating-stars">
@@ -280,6 +277,7 @@ function UploadBook() {
               </div>
               <input
                 type="range"
+                aria-label="Valutazione del libro"
                 min="0"
                 max="5"
                 step="0.5"
@@ -294,27 +292,9 @@ function UploadBook() {
               />
               <div className="rating-value">
                 {formData.rating > 0
-                  ? `${formData.rating.toFixed(1)} / 5`
-                  : 'No rating'}
+                  ? `${formData.rating.toLocaleString('it-IT', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} / 5`
+                  : 'Nessuna valutazione'}
               </div>
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="is_bookclub" className="form-label">
-              BookClub Read
-            </label>
-            <div className="checkbox-row">
-              <input
-                type="checkbox"
-                id="is_bookclub"
-                name="is_bookclub"
-                checked={formData.is_bookclub}
-                onChange={handleInputChange}
-              />
-              <span className="checkbox-label">
-                Mark this book as a BookClub read (it will appear on the BookClub Reads page)
-              </span>
             </div>
           </div>
 
@@ -325,14 +305,14 @@ function UploadBook() {
               className="btn btn-secondary"
               disabled={loading}
             >
-              Cancel
+              Annulla
             </button>
             <button
               type="submit"
               className="btn btn-primary"
               disabled={loading}
             >
-              {loading ? 'Adding Book...' : 'Add Book'}
+              {loading ? 'Aggiunta in corso...' : 'Aggiungi libro'}
             </button>
           </div>
         </form>

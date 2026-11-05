@@ -14,10 +14,10 @@ function BookCard({ book }) {
       <div className="book-card-content">
         <h3 className="book-card-title">{book.title}</h3>
         {book.author && (
-          <p className="book-card-author">by {book.author}</p>
+          <p className="book-card-author">di {book.author}</p>
         )}
         {book.writer && (
-          <p className="book-card-writer-meta">Added by {book.writer}</p>
+          <p className="book-card-writer-meta">Aggiunto da {book.writer}</p>
         )}
         {book.rating != null && book.rating > 0 && (
           <div className="book-card-rating">

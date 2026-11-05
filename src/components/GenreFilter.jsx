@@ -79,7 +79,7 @@ function GenreFilter({ selectedGenres, onChange }) {
   )
 
   if (loading) {
-    return <div className="genre-filter-loading">Loading genres...</div>
+    return <div className="genre-filter-loading">Caricamento dei generi...</div>
   }
 
   if (allGenres.length === 0) {
@@ -89,13 +89,13 @@ function GenreFilter({ selectedGenres, onChange }) {
   return (
     <div className="genre-filter">
       <div className="genre-filter-header">
-        <h3 className="genre-filter-title">Filter by Genre</h3>
+        <h3 className="genre-filter-title">Filtra per genere</h3>
         {selectedGenres.length > 0 && (
           <button
             className="genre-filter-clear"
             onClick={clearAll}
           >
-            Clear all ({selectedGenres.length})
+            Rimuovi tutti ({selectedGenres.length})
           </button>
         )}
       </div>
@@ -110,7 +110,7 @@ function GenreFilter({ selectedGenres, onChange }) {
                 type="button"
                 className="genre-filter-remove"
                 onClick={() => removeGenre(genre)}
-                aria-label={`Remove ${genre}`}
+                aria-label={`Rimuovi ${genre}`}
               >
                 ×
               </button>
@@ -127,7 +127,8 @@ function GenreFilter({ selectedGenres, onChange }) {
           value={searchQuery}
           onChange={(e) => handleInputChange(e.target.value)}
           onFocus={handleInputFocus}
-          placeholder="Search for a genre to add..."
+          aria-label="Filtra i libri per genere"
+          placeholder="Cerca un genere da aggiungere..."
           className="genre-filter-search-input"
         />
 
@@ -146,7 +147,7 @@ function GenreFilter({ selectedGenres, onChange }) {
             ))}
             {filteredGenres.length > 10 && (
               <div className="genre-filter-suggestion-more">
-                +{filteredGenres.length - 10} more...
+                +{filteredGenres.length - 10} altri...
               </div>
             )}
           </div>
@@ -155,7 +156,7 @@ function GenreFilter({ selectedGenres, onChange }) {
         {showSuggestions && searchQuery.trim() && filteredGenres.length === 0 && (
           <div ref={suggestionsRef} className="genre-filter-suggestions">
             <div className="genre-filter-suggestion-empty">
-              No genres found matching "{searchQuery}"
+              Nessun genere trovato per "{searchQuery}"
             </div>
           </div>
         )}

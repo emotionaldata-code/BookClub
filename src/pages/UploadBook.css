@@ -48,23 +48,9 @@
 
 .rating-value {
   font-size: 14px;
-  color: #7f8c8d;
+  color: var(--text-secondary);
 }
 
-.checkbox-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-.checkbox-row input[type="checkbox"] {
-  margin-top: 3px;
-}
-
-.checkbox-label {
-  font-size: 14px;
-  color: #34495e;
-}
 
 .form-label {
   display: block;
@@ -89,7 +75,7 @@
 
 .form-input:focus {
   outline: none;
-  border-color: #3498db;
+  border-color: #1f6f9d;
 }
 
 .form-textarea {
@@ -105,7 +91,7 @@
 
 .form-textarea:focus {
   outline: none;
-  border-color: #3498db;
+  border-color: #1f6f9d;
 }
 
 .cover-upload {
@@ -134,7 +120,7 @@
 }
 
 .cover-upload-placeholder:hover {
-  border-color: #3498db;
+  border-color: #1f6f9d;
   background: #e8f4f8;
 }
 
@@ -152,7 +138,7 @@
 
 .cover-upload-hint {
   font-size: 13px;
-  color: #7f8c8d;
+  color: var(--text-secondary);
 }
 
 .cover-preview {
@@ -210,23 +196,23 @@
 }
 
 .btn-primary {
-  background: #3498db;
+  background: #1f6f9d;
   color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #2980b9;
+  background: #1a5d84;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
 }
 
 .btn-secondary {
-  background: #95a5a6;
+  background: #59666b;
   color: white;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: #7f8c8d;
+  background: #465156;
 }
 
 .alert {

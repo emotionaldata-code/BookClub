@@ -125,7 +125,7 @@ function GenreTagInput({ genres, onChange }) {
                 type="button"
                 className="genre-tag-remove"
                 onClick={() => removeGenre(index)}
-                aria-label={`Remove ${genre}`}
+                aria-label={`Rimuovi ${genre}`}
               >
                 ×
               </button>
@@ -139,7 +139,8 @@ function GenreTagInput({ genres, onChange }) {
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
             onFocus={() => inputValue.trim() && setShowSuggestions(true)}
-            placeholder={genres.length === 0 ? "Type genre and press space twice..." : ""}
+            aria-label="Aggiungi un genere"
+            placeholder={genres.length === 0 ? "Scrivi un genere e premi due volte spazio..." : ""}
             className="genre-tag-input-field"
           />
         </div>
@@ -156,14 +157,14 @@ function GenreTagInput({ genres, onChange }) {
               >
                 <span className="genre-tag-suggestion-icon">🏷️</span>
                 {genre}
-                <span className="genre-tag-suggestion-hint">existing</span>
+                <span className="genre-tag-suggestion-hint">esistente</span>
               </button>
             ))}
           </div>
         )}
       </div>
       <p className="genre-tag-hint">
-        Type a genre and press Space twice to add it • Suggestions show existing genres
+        Scrivi un genere e premi due volte spazio per aggiungerlo. I suggerimenti mostrano i generi esistenti.
       </p>
     </div>
   )
