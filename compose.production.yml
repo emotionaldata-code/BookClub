@@ -1,0 +1,77 @@
+services:
+  app:
+    build:
+      context: ${BOOKCLUB_BUILD_CONTEXT:-.}
+      dockerfile_inline: |
+        FROM node:24-alpine AS build
+        WORKDIR /app
+        COPY package.json package-lock.json ./
+        RUN npm ci
+        COPY src ./src
+        COPY index.html vite.config.js ./
+        RUN npm run build
+
+        FROM node:24-alpine
+        ENV NODE_ENV=production
+        WORKDIR /app
+        COPY package.json package-lock.json ./
+        RUN npm ci --omit=dev && npm cache clean --force
+        COPY server ./server
+        COPY --from=build /app/dist ./dist
+        USER node
+        EXPOSE 6310
+        CMD ["node", "server/server.js"]
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "6310"
+      POSTGRES_URL: postgresql://bookclub:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/bookDB
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - default
+      - dokploy-network
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:6310/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    mem_limit: 512m
+    cpus: 1
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: bookDB
+      POSTGRES_USER: bookclub
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - bookclub-postgres:/var/lib/postgresql/data
+      - ${BOOKCLUB_SEED_DIR:-./deploy/seed}/bookDB.dump.b64:/seed/bookDB.dump.b64:ro
+      - ${BOOKCLUB_INIT_SCRIPT:-./deploy/10-restore-bookclub.sh}:/docker-entrypoint-initdb.d/10-restore-bookclub.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U bookclub -d bookDB"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    mem_limit: 512m
+    cpus: 1
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"
+
+volumes:
+  bookclub-postgres:
+
+networks:
+  dokploy-network:
+    external: true

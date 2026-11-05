@@ -4,6 +4,8 @@ dist
 .gitignore
 *.md
 .env
+.env.*
+deploy/seed
 .DS_Store
 npm-debug.log*
 server/bookclub.db

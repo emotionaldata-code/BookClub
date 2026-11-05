@@ -1,0 +1,25 @@
+{
+  "instance": "https://dokploy.edia-company.com",
+  "projectId": "7Iqsk-EYPfuCGnKIB3oWh",
+  "environmentId": "OGsDLLlyw00Y-HDSA6uAP",
+  "environment": "production",
+  "composeId": "bWJPvpb4efzpPSHXB5O-O",
+  "appName": "bookclub-production-i04mfy",
+  "domain": "https://book-club.edia-company.com",
+  "sourceRevision": "b209f91e6538598865bc80396930778c6eb0f632",
+  "sourceType": "github",
+  "repository": "emotionaldata-code/BookClub",
+  "branch": "main",
+  "composePath": "./compose.production.yml",
+  "autoDeploy": true,
+  "triggerType": "push",
+  "initialDeploymentId": "lcZphcqzp9abL-6mgpDqP",
+  "databaseVolume": "bookclub-production-i04mfy_bookclub-postgres",
+  "seedSha256": "6e951386c8747c37933346df3becb9bd9b9a8b0eb13e10b178d42a7b8fa5c121",
+  "seedCounts": {
+    "books": 22,
+    "genres": 13,
+    "book_genres": 24,
+    "comments": 3
+  }
+}
