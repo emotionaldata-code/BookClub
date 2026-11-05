@@ -23,7 +23,7 @@
   font-family: inherit;
   background: var(--surface);
   color: var(--text-primary);
-  transition: all 0.2s ease;
+  transition: background 140ms ease, border-color 140ms ease;
   outline: none;
 }
 
@@ -50,7 +50,7 @@
   line-height: 1;
   border-radius: 50%;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background 140ms ease, border-color 140ms ease;
   display: flex;
   align-items: center;
   justify-content: center;

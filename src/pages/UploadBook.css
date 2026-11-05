@@ -1,14 +1,14 @@
 .upload-book {
   max-width: 800px;
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: 0;
 }
 
 .upload-form {
   background: white;
   padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  border: 0;
 }
 
 .form-group {
@@ -67,10 +67,11 @@
 .form-input {
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
+  border: 1px solid transparent;
+  background: var(--control-background);
+  border-radius: 12px;
   font-size: 16px;
-  transition: border-color 0.2s;
+  transition: border-color 140ms ease;
 }
 
 .form-input:focus {
@@ -81,12 +82,13 @@
 .form-textarea {
   width: 100%;
   padding: 12px 16px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
+  border: 1px solid transparent;
+  background: var(--control-background);
+  border-radius: 12px;
   font-size: 16px;
   font-family: inherit;
   resize: vertical;
-  transition: border-color 0.2s;
+  transition: border-color 140ms ease;
 }
 
 .form-textarea:focus {
@@ -114,7 +116,7 @@
   justify-content: center;
   padding: 40px;
   border: 2px dashed #bdc3c7;
-  border-radius: 8px;
+  border-radius: 12px;
   background: #f8f9fa;
   transition: all 0.2s;
 }
@@ -149,7 +151,7 @@
 .cover-preview img {
   max-width: 300px;
   max-height: 400px;
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
@@ -177,13 +179,13 @@
   justify-content: flex-end;
   margin-top: 32px;
   padding-top: 24px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 0;
 }
 
 .btn {
   padding: 12px 24px;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
@@ -202,8 +204,6 @@
 
 .btn-primary:hover:not(:disabled) {
   background: #1a5d84;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
 }
 
 .btn-secondary {
@@ -217,7 +217,7 @@
 
 .alert {
   padding: 16px;
-  border-radius: 8px;
+  border-radius: 12px;
   margin-bottom: 24px;
   font-weight: 500;
 }
@@ -236,7 +236,7 @@
 
 @media (max-width: 768px) {
   .upload-book {
-    padding: 20px 10px;
+    padding: 0;
   }
 
   .upload-form {
@@ -256,3 +256,8 @@
   }
 }
 
+
+.form-input, .form-textarea { color: var(--text-primary); min-height: 48px; }
+.form-input:focus-visible, .form-textarea:focus-visible { outline: 2px solid var(--accent-color); outline-offset: 2px; }
+.btn { min-height: 48px; }
+.btn:active:not(:disabled) { transform: scale(.98); }

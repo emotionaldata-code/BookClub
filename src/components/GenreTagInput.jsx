@@ -41,7 +41,9 @@ function GenreTagInput({ genres, onChange }) {
   }
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Backspace' && !inputValue && genres.length > 0) {
+    if (e.key === 'Escape') {
+      setShowSuggestions(false)
+    } else if (e.key === 'Backspace' && !inputValue && genres.length > 0) {
       // Remove last genre on backspace if input is empty
       removeGenre(genres.length - 1)
     } else if (e.key === 'Enter' && filteredSuggestions.length > 0) {
@@ -155,9 +157,7 @@ function GenreTagInput({ genres, onChange }) {
                 className="genre-tag-suggestion-item"
                 onClick={() => addGenre(genre)}
               >
-                <span className="genre-tag-suggestion-icon">🏷️</span>
                 {genre}
-                <span className="genre-tag-suggestion-hint">esistente</span>
               </button>
             ))}
           </div>

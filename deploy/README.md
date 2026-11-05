@@ -41,3 +41,11 @@ La ricerca considera titolo, descrizione, autore e persona che ha aggiunto il li
 I filtri per genere, valutazione minima (incluse mezze stelle), autore e persona si combinano tra loro. Con più generi sono richiesti tutti quelli scelti. È disponibile anche il filtro “Senza valutazione”. L'ordinamento per stelle lascia i libri senza valutazione in fondo. Ricerca, filtri e ordine sono conservati nei parametri dell'URL e nel ritorno dal dettaglio del libro.
 
 Verifica la logica dei filtri con `node --test src/lib/bookFilters.test.js` e la compilazione con `npm run build`.
+
+### Menu e layout della libreria
+
+I filtri usano un menu condiviso (`SelectMenu`) con ricerca per genere, autore e persona,
+selezione evidenziata, frecce, Home/End, ricerca digitando, Invio, Escape e Tab.
+I menu si aprono verso lo spazio disponibile nel viewport e rispettano le preferenze
+per movimento, trasparenza e contrasto. Su telefono le schede libro sono righe compatte
+con copertina intera. Questa modifica non richiede migrazioni o modifiche ai dati.

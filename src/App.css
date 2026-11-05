@@ -7,11 +7,12 @@
 .header {
   background: var(--surface);
   padding: 0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, .92);
+  backdrop-filter: blur(20px) saturate(130%);
   position: sticky;
   top: 0;
   z-index: 100;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 0;
 }
 
 .header-content {
@@ -47,7 +48,7 @@
   color: var(--text-secondary);
   font-weight: 500;
   margin-bottom: 2rem;
-  transition: all 0.2s ease;
+  transition: background 140ms ease, color 140ms ease;
   font-size: 0.95rem;
 }
 
@@ -72,6 +73,7 @@
 
 .nav-tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
 }
 
@@ -83,8 +85,8 @@
   font-size: 0.95rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
-  border-radius: 6px;
+  transition: background 140ms ease, color 140ms ease;
+  border-radius: 12px;
   font-family: inherit;
 }
 
@@ -94,8 +96,8 @@
 }
 
 .nav-tab.active {
-  background: var(--primary-color);
-  color: white;
+  background: #e9edf2;
+  color: var(--text-primary);
 }
 
 .nav-tab-upload {
@@ -131,3 +133,15 @@
   }
 }
 
+
+.nav-tab { min-height: 44px; max-width: 100%; overflow-wrap: anywhere; }
+.nav-tab:active { transform: scale(.97); }
+.page-title { letter-spacing: -.025em; line-height: 1.2; }
+@media (max-width: 768px) {
+  .main { padding: 28px 0; }
+  .container { padding: 0 20px; }
+  .header-content { gap: 12px; padding: 16px 0; }
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .header { background: white; backdrop-filter: none; }
+}

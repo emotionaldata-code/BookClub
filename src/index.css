@@ -2,9 +2,10 @@
   --primary-color: #2c3e50;
   --primary-dark: #1a252f;
   --accent-color: #1f6f9d;
-  --background: #f5f7fa;
+  --background: #f2f4f7;
   --surface: #ffffff;
-  --surface-light: #f8f9fa;
+  --surface-light: #f6f7f9;
+  --control-background: #f0f3f6;
   --text-primary: #2c3e50;
   --text-secondary: #59666b;
   --border-color: #e0e6ed;
@@ -44,3 +45,12 @@ a {
   color: inherit;
 }
 
+
+button, input, textarea { font-family: inherit; }
+button, a, input { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+:focus-visible { outline: 3px solid var(--accent-color); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+
+@media (prefers-contrast: more) { input, textarea, .genre-tags-container { border: 1px solid var(--text-primary); } }

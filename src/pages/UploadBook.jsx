@@ -161,7 +161,7 @@ function UploadBook() {
               ) : (
                 <label htmlFor="cover" className="cover-upload-label">
                   <div className="cover-upload-placeholder">
-                    <span className="cover-upload-icon">📷</span>
+                    <svg className="cover-upload-icon" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden="true"><path d="M8 5 9.5 3h5L16 5h4v15H4V5Z" /><circle cx="12" cy="12" r="4" /></svg>
                     <span className="cover-upload-text">
                       Seleziona una copertina
                     </span>

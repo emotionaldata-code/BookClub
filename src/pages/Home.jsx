@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import BookCard from '../components/BookCard'
 import SearchBar from '../components/SearchBar'
 import GenreFilter from '../components/GenreFilter'
+import SelectMenu from '../components/SelectMenu'
 import { filterBooks, getFilterOptions } from '../lib/bookFilters'
 import './Home.css'
 
@@ -100,28 +101,26 @@ function Home() {
           <div id="catalogue-filter-fields" className="catalogue-filter-fields" hidden={!filtersOpen}>
             <GenreFilter genres={options.genres} selectedGenres={selectedGenres} onChange={value => updateFilter('genre', value)} />
             <div className="catalogue-field">
-              <label htmlFor="rating-filter">Valutazione</label>
-              <select id="rating-filter" value={rating} onChange={event => updateFilter('rating', event.target.value)}>
-                <option value="">Tutte le valutazioni</option>
-                {[5, 4.5, 4, 3.5, 3, 2.5, 2, 1.5, 1, 0.5].map(value => <option key={value} value={value}>{value === 5 ? '5 stelle' : `Da ${value.toLocaleString('it-IT')} ${value === 1 ? 'stella' : 'stelle'} in su`}</option>)}
-                <option value="unrated">Senza valutazione</option>
-              </select>
+              <label id="rating-filter-label" htmlFor="rating-filter">Valutazione</label>
+              <SelectMenu id="rating-filter" label="Valutazione" value={rating} onChange={value => updateFilter('rating', value)} options={[
+                { value: '', label: 'Tutte le valutazioni' },
+                ...[5, 4.5, 4, 3.5, 3, 2.5, 2, 1.5, 1, 0.5].map(value => ({ value: String(value), label: value === 5 ? '5 stelle' : `Da ${value.toLocaleString('it-IT')} ${value === 1 ? 'stella' : 'stelle'} in su` })),
+                { value: 'unrated', label: 'Senza valutazione' },
+              ]} />
             </div>
             <div className="catalogue-field">
-              <label htmlFor="author-filter">Autore</label>
-              <select id="author-filter" value={author} onChange={event => updateFilter('author', event.target.value)}>
-                <option value="">Tutti gli autori</option>
-                {options.authors.map(value => <option key={value} value={value}>{value}</option>)}
-                {author && !options.authors.includes(author) && <option value={author}>{author}</option>}
-              </select>
+              <label id="author-filter-label" htmlFor="author-filter">Autore</label>
+              <SelectMenu id="author-filter" label="Autore" value={author} searchable onChange={value => updateFilter('author', value)} options={[
+                { value: '', label: 'Tutti gli autori' },
+                ...[...new Set([...options.authors, ...(author ? [author] : [])])].map(value => ({ value, label: value })),
+              ]} />
             </div>
             <div className="catalogue-field">
-              <label htmlFor="writer-filter">Aggiunto da</label>
-              <select id="writer-filter" value={writer} onChange={event => updateFilter('writer', event.target.value)}>
-                <option value="">Tutte le persone</option>
-                {options.writers.map(value => <option key={value} value={value}>{value}</option>)}
-                {writer && !options.writers.includes(writer) && <option value={writer}>{writer}</option>}
-              </select>
+              <label id="writer-filter-label" htmlFor="writer-filter">Aggiunto da</label>
+              <SelectMenu id="writer-filter" label="Aggiunto da" value={writer} searchable onChange={value => updateFilter('writer', value)} options={[
+                { value: '', label: 'Tutte le persone' },
+                ...[...new Set([...options.writers, ...(writer ? [writer] : [])])].map(value => ({ value, label: value })),
+              ]} />
             </div>
             {!loading && !error && <button className="mobile-show-results" type="button" onClick={() => setFiltersOpen(false)}>Mostra {filteredBooks.length} {filteredBooks.length === 1 ? 'libro' : 'libri'}</button>}
           </div>
@@ -139,13 +138,13 @@ function Home() {
             {loading ? 'Caricamento dei libri…' : error ? 'Libreria non disponibile' : <><strong>{filteredBooks.length}</strong> {filteredBooks.length === 1 ? 'libro' : 'libri'}{hasFilters ? ` su ${books.length}` : ' nella libreria'}</>}
           </p>
           <div className="catalogue-sort catalogue-field">
-            <label htmlFor="sort-books">Ordina per</label>
-            <select id="sort-books" value={sort} onChange={event => updateFilter('sort', event.target.value)}>
-              <option value="title">Titolo: A–Z</option>
-              <option value="title-desc">Titolo: Z–A</option>
-              <option value="rating-desc">Stelle: più alte</option>
-              <option value="rating-asc">Stelle: più basse</option>
-            </select>
+            <label id="sort-books-label" htmlFor="sort-books">Ordina per</label>
+            <SelectMenu id="sort-books" label="Ordina per" value={sort} onChange={value => updateFilter('sort', value)} options={[
+              { value: 'title', label: 'Titolo: A–Z' },
+              { value: 'title-desc', label: 'Titolo: Z–A' },
+              { value: 'rating-desc', label: 'Stelle: più alte' },
+              { value: 'rating-asc', label: 'Stelle: più basse' },
+            ]} />
           </div>
         </div>
 
