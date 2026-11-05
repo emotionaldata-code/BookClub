@@ -121,11 +121,11 @@ export async function getAllBooks() {
   return result;
 }
 
-// Get books list (optimized - without description for faster list queries)
+// Include descriptions so the catalogue can search them without per-book requests.
 export async function getBooksListOptimized({ isBookclubOnly = false } = {}) {
   const { rows: books } = await pool.query(
     `
-      SELECT id, title, cover, is_bookclub, writer, author, rating
+      SELECT id, title, description, cover, is_bookclub, writer, author, rating
       FROM books
       ${isBookclubOnly ? 'WHERE is_bookclub = TRUE' : ''}
       ORDER BY title
@@ -151,6 +151,7 @@ export async function getBooksListOptimized({ isBookclubOnly = false } = {}) {
     result.push({
       id: book.id,
       title: book.title,
+      description: book.description,
       cover: book.cover ? `data:image/png;base64,${book.cover.toString('base64')}` : null,
       is_bookclub: book.is_bookclub,
       writer: book.writer,

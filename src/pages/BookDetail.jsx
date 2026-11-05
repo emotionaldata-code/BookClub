@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, useLocation, Link } from 'react-router-dom'
 import './BookDetail.css'
 
 function BookDetail() {
   const { bookId } = useParams()
+  const location = useLocation()
+  const libraryLink = { pathname: '/', search: location.state?.librarySearch ?? '' }
   const [book, setBook] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -102,7 +104,7 @@ function BookDetail() {
     return (
       <div className="container">
         <div className="book-detail">
-          <Link to="/" className="back-link">← Torna alla libreria</Link>
+          <Link to={libraryLink} className="back-link">← Torna alla libreria</Link>
           <p className="loading">Caricamento del libro...</p>
         </div>
       </div>
@@ -113,7 +115,7 @@ function BookDetail() {
     return (
       <div className="container">
         <div className="book-detail">
-          <Link to="/" className="back-link">← Torna alla libreria</Link>
+          <Link to={libraryLink} className="back-link">← Torna alla libreria</Link>
           <h2>{error || 'Libro non trovato'}</h2>
         </div>
       </div>
@@ -123,7 +125,7 @@ function BookDetail() {
   return (
     <div className="container">
       <div className="book-detail">
-        <Link to="/" className="back-link">← Torna alla libreria</Link>
+        <Link to={libraryLink} className="back-link">← Torna alla libreria</Link>
         
         <div className="book-detail-content">
           <div className="book-detail-cover">

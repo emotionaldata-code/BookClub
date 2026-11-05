@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import './SearchBar.css'
 
-function SearchBar({ value, onChange, placeholder = "Cerca libri..." }) {
+function SearchBar({ id, value, onChange, placeholder = "Cerca libri..." }) {
   const inputRef = useRef(null)
 
   // Handle input change with proper null/undefined checks
@@ -39,7 +39,8 @@ function SearchBar({ value, onChange, placeholder = "Cerca libri..." }) {
       </svg>
       <input
         ref={inputRef}
-        type="text"
+        id={id}
+        type="search"
         value={safeValue}
         onChange={handleChange}
         placeholder={placeholder}

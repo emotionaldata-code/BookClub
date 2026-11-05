@@ -33,3 +33,11 @@ Al primo avvio impostare `ADMIN_USERNAME`, `ADMIN_PASSWORD_HASH` e `ADMIN_ORIGIN
 Le sessioni durano 12 ore e sono salvate nel database; il browser riceve un cookie HttpOnly, Secure in produzione e SameSite Strict. Gli endpoint di autenticazione sono `POST /api/admin/login`, `GET /api/admin/session` e `POST /api/admin/logout`. Il logout revoca la sessione. Le richieste amministrative con origine diversa da `ADMIN_ORIGIN` vengono rifiutate.
 
 Verifica l'autenticazione con `node --test server/admin-auth.test.js`. Per includere il test di persistenza usa `TEST_POSTGRES_URL` verso un database PostgreSQL di prova: il test crea ed elimina un proprio schema isolato. Per una verifica locale completa imposta anche `ADMIN_ORIGIN` all'URL locale del servizio.
+
+## Ricerca nella libreria
+
+La ricerca considera titolo, descrizione, autore e persona che ha aggiunto il libro, ignorando maiuscole e accenti. Tutte le parole cercate devono comparire, anche distribuite tra campi diversi. L'elenco `/api/books?optimized=true` include le descrizioni, senza richieste separate per ogni libro.
+
+I filtri per genere, valutazione minima (incluse mezze stelle), autore e persona si combinano tra loro. Con più generi sono richiesti tutti quelli scelti. È disponibile anche il filtro “Senza valutazione”. L'ordinamento per stelle lascia i libri senza valutazione in fondo. Ricerca, filtri e ordine sono conservati nei parametri dell'URL e nel ritorno dal dettaglio del libro.
+
+Verifica la logica dei filtri con `node --test src/lib/bookFilters.test.js` e la compilazione con `npm run build`.

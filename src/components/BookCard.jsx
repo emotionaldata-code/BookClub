@@ -1,9 +1,10 @@
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import './BookCard.css'
 
 function BookCard({ book }) {
+  const location = useLocation()
   return (
-    <Link to={`/books/${book.id}`} className="book-card">
+    <Link to={`/books/${book.id}`} state={{ librarySearch: location.search }} className="book-card">
       <div className="book-card-image">
         {book.cover ? (
           <img src={book.cover} alt={book.title} />

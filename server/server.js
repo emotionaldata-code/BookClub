@@ -57,7 +57,7 @@ app.get('/api/books', async (req, res) => {
     const { search, optimized, is_bookclub } = req.query;
     const isBookclubOnly = is_bookclub === 'true' || is_bookclub === '1';
     
-    // Use optimized version for list views (excludes description)
+    // The catalogue includes descriptions for client-side searching.
     if (optimized === 'true') {
       const books = await getBooksListOptimized({ isBookclubOnly });
       res.json(books);
